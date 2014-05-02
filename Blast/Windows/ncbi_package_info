@@ -1,0 +1,185 @@
+PACKAGE_NAME: blast
+PACKAGE_VERSION: 2.2.27
+PACKAGE_SIGNATURE: MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+PACKAGE_CONFIG: Win64_9 : plain : msvc900_prj static 64 ReleaseMT
+
+>>>>>  blastp.exe
+
+blastp: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  blastn.exe
+
+blastn: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  blastx.exe
+
+blastx: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  tblastn.exe
+
+tblastn: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  tblastx.exe
+
+tblastx: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  psiblast.exe
+
+psiblast: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  rpsblast.exe
+
+rpsblast: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  rpstblastn.exe
+
+rpstblastn: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  makembindex.exe
+
+makembindex: 0.0.0
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  segmasker.exe
+
+segmasker: 1.0.0
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  dustmasker.exe
+
+dustmasker: 1.0.0
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  windowmasker.exe
+
+windowmasker: 1.0.0
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  deltablast.exe
+
+deltablast: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  makeblastdb.exe
+
+makeblastdb: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  blastdbcmd.exe
+
+blastdbcmd: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  blastdb_aliastool.exe
+
+blastdb_aliastool: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  convert2blastmask.exe
+
+convert2blastmask: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  blastdbcheck.exe
+
+blastdbcheck: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  makeprofiledb.exe
+
+makeprofiledb: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
+>>>>>  blast_formatter.exe
+
+blast_formatter: 2.2.27+
+Package: blast 2.2.27, build Sep 11 2012 10:19:22
+ MSVC_900-ReleaseMT--i386-pc-x64-MSCOREMAKE6
+ 
+
+
+
