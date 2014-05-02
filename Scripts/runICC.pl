@@ -14,7 +14,7 @@
 #######################################################################################
 
 use strict;
-use lib "/home/wdeng/ICC_v1.0/Scripts/lib";
+use lib "/home/wdeng/ICC_v1.1/Scripts/lib";
 use paths;
 use utils;
 use File::Basename;
@@ -64,7 +64,7 @@ my $inDir = getcwd();
 my $scriptPath = $paths::scriptPath;
 
 my @workingDirs = ();
-opendir DH, $inDir or die "couldn't open $inDir\n";
+opendir DH, $inDir or die "couldn't open 1 $inDir\n";
 while (my $subdir = readdir DH) {
 	unless ($subdir =~ /^\./) {
 		if ($subdir =~ /Region(\d+)\-(\d+)/i) {
@@ -85,10 +85,10 @@ if ($inDir =~ /(.*)\/(.*?)$/) {
 }
 
 my $ntFreqFile = $pref_name."_nt_freq.txt";
-my $ntHyploFile = $pref_name."_nt_hyplotypes.fas";
-my $ntHyploFreqFile = $pref_name."_nt_hyplo_freq.txt";
-my $aaHyploFile = $pref_name."_aa_hyplotypes.fas";
-my $aaHyploFreqFile = $pref_name."_aa_hyplo_freq.txt";
+my $ntHaploFile = $pref_name."_nt_haplotypes.fas";
+my $ntHaploFreqFile = $pref_name."_nt_haplo_freq.txt";
+my $aaHaploFile = $pref_name."_aa_haplotypes.fas";
+my $aaHaploFreqFile = $pref_name."_aa_haplo_freq.txt";
 my $snvFreqFile = $pref_name."_SNV_freq.txt";
 
 print "\n#########################################################################\n";
@@ -103,13 +103,13 @@ print "#########################################################################
 my $startTime = time();
 
 open NF, ">$ntFreqFile" or die "couldn't open $ntFreqFile: $!\n";
-open NH, ">$ntHyploFile" or die "could't open $ntHyploFile: $!\n";
-open NHF, ">$ntHyploFreqFile" or die "couldn't open $ntHyploFreqFile: $!\n";
-open AH, ">$aaHyploFile" or die "couldn't open $aaHyploFile: $!\n";
-open AHF, ">$aaHyploFreqFile" or die "couldn't open $aaHyploFreqFile: $!\n";
+open NH, ">$ntHaploFile" or die "could't open $ntHaploFile: $!\n";
+open NHF, ">$ntHaploFreqFile" or die "couldn't open $ntHaploFreqFile: $!\n";
+open AH, ">$aaHaploFile" or die "couldn't open $aaHaploFile: $!\n";
+open AHF, ">$aaHaploFreqFile" or die "couldn't open $aaHaploFreqFile: $!\n";
 open SNV, ">$snvFreqFile" or die "couldn't open $snvFreqFile: $!\n";
-print NHF "Hyplotype\tStart\tEnd\tFrequency\tReads\n";
-print AHF "Hyplotype\tStart\tEnd\tFrequency\tReads\n";
+print NHF "Haplotype\tStart\tEnd\tFrequency\tReads\n";
+print AHF "Haplotype\tStart\tEnd\tFrequency\tReads\n";
 print NF "Position\tConsensus\t-\tA\tC\tG\tT\tCoverage\n";
 print SNV "Position\tConsensus\t-\tA\tC\tG\tT\tCoverage\n";
 
@@ -118,7 +118,7 @@ foreach my $subdir (@sortDirs) {
 	$subdir = $inDir.'/'.$subdir;
 	if (-d $subdir) {
 		if ($subdir =~ /Region(\d+)\-(\d+)/i) {
-			my $timeStart = time();
+			#my $timeStart = time();
 			my $rgStart = $1;
 			my $rgEnd = $2;
 			my $indelCfCorrOutUniq = '';
@@ -191,7 +191,7 @@ foreach my $subdir (@sortDirs) {
 								$indelCfCorrOutUniq = $indelCfCorrOut;
 								$indelCfCorrOutUniq =~ s/\.fas/_U.fas/;
 								system ("perl $scriptPath/uniqueReads.pl -if $indelCfCorrOut -of $indelCfCorrOutUniq -uf");	
-								#unlink $distOut;			
+								unlink $distOut;			
 							}
 						}						
 						closedir SSUB;
@@ -256,8 +256,8 @@ foreach my $subdir (@sortDirs) {
 			print SNV "\n";
 			close FREQ;
 			
-			# write to nucleotide hyplotype fasta file
-			my $poissonFlag = my $poissonCutReads = my $hyploIdx = my $nt_dup = 0;
+			# write to nucleotide haplotype fasta file
+			my $poissonFlag = my $poissonCutReads = my $haploIdx = my $nt_dup = 0;
 			my %ntSeqCount = my %aaSeqCount = ();
 			my $poissonCut = utils::calculate_poisson($original_T_count, $u);
 			open IN, $indelCfCorrOutUniq or die "couldn't open $indelCfCorrOutUniq: $!\n";			
@@ -267,9 +267,9 @@ foreach my $subdir (@sortDirs) {
 					$nt_dup = $2;
 					if ($nt_dup >= $poissonCut) {
 						$poissonFlag = 1;
-						$hyploIdx++;
+						$haploIdx++;
 						$poissonCutReads += $nt_dup;
-						print NH ">Region".$rgStart."-".$rgEnd."_hyplo".$hyploIdx."_".$nt_dup."\n";
+						print NH ">Region".$rgStart."-".$rgEnd."_haplo".$haploIdx."_".$nt_dup."\n";
 					}else {
 						$poissonFlag = 0;
 					}
@@ -282,26 +282,26 @@ foreach my $subdir (@sortDirs) {
 			}
 			close IN;
 			
-			# write to nucleotide hyplotype frequency file
+			# write to nucleotide haplotype frequency file
 			foreach my $ntSeq (sort{$ntSeqCount{$b} <=> $ntSeqCount{$a}} keys %ntSeqCount) {
 				my $freq = int ($ntSeqCount{$ntSeq} / $poissonCutReads * 1000000 + 0.5) / 1000000;
 				print NHF "$ntSeq\t$rgStart\t$rgEnd\t$freq\t$ntSeqCount{$ntSeq}\n";
 			}
 			print NHF "\n";
 			
-			# write to amino acid hyplotype fasta and frequency file
-			my $aaHyploIdx = 0;
+			# write to amino acid haplotype fasta and frequency file
+			my $aaHaploIdx = 0;
 			foreach my $aaSeq (sort{$aaSeqCount{$b} <=> $aaSeqCount{$a}} keys %aaSeqCount) {
-				$aaHyploIdx++;
+				$aaHaploIdx++;
 				my $freq = int ($aaSeqCount{$aaSeq} / $poissonCutReads * 1000000 + 0.5) / 1000000;
 				print AHF "$aaSeq\t$rgStart\t$rgEnd\t$freq\t$aaSeqCount{$aaSeq}\n";
-				print AH ">Region".$rgStart."-".$rgEnd."_hyplo".$aaHyploIdx."_".$aaSeqCount{$aaSeq}."\n";
+				print AH ">Region".$rgStart."-".$rgEnd."_haplo".$aaHaploIdx."_".$aaSeqCount{$aaSeq}."\n";
 				print AH "$aaSeq\n";
 			}
 			print AHF "\n";
-			my $timeEnd = time();
-			my $timeDuration = $timeEnd - $timeStart;
-			print "\ntime duration in manipulating directory $subdir: ". strftime("\%H:\%M:\%S", gmtime($timeDuration)). "\n\n";
+			#my $timeEnd = time();
+			#my $timeDuration = $timeEnd - $timeStart;
+			#print "\ntime duration in manipulating directory $subdir: ". strftime("\%H:\%M:\%S", gmtime($timeDuration)). "\n\n";
 		}			
 	}
 }
@@ -314,7 +314,9 @@ close SNV;
 
 my $endTime = time();
 my $duration = $endTime - $startTime;
-print "\nAll done!\ntotal time duration: ". strftime("\%H:\%M:\%S", gmtime($duration)). "\n\n";
+my $hrs = int ($duration / 86400 * 100000 + 0.5) / 100000;
+print "\nAll done!\ntotal time duration: $hrs hour(s).\n\n";
+#print "\nAll done!\ntotal time duration: ". strftime("\%H:\%M:\%S", gmtime($duration)). "\n\n";
 
 
 sub by_number {

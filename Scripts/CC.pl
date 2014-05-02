@@ -14,7 +14,7 @@
 #######################################################################################
 
 use strict;
-use lib "/home/wdeng/ICC_v1.0/Scripts/lib";
+use lib "/home/wdeng/ICC_v1.1/Scripts/lib";
 use seqAlign;
 use Getopt::Long;
 use File::Path;
@@ -91,7 +91,7 @@ while (@names) {
 		my @cluster_names = ();
 		my $central_seq = $nameSeq{$central_name};
 		print OUTPUT ">$central_name\n$central_seq\n";
-		$central_seq =~ s/\-//g;
+		#$central_seq =~ s/\-//g;
 		
 		push @cluster_names, $central_name;		
 		my $duplicates = 1;
@@ -110,7 +110,7 @@ while (@names) {
 					my $restPercent = $restFreq / ($readFreq + $restFreq);
 					if ($restPercent < $cfCut) {	# carry forward error frequency is as largist as 5% of total frequency in the cluster
 						my $rest_seq = $nameSeq{$rest_name};					
-						$rest_seq =~ s/\-//g;
+						#$rest_seq =~ s/\-//g;
 						
 						my $etStrs = seqAlign::PairwiseAlign ($central_seq, $rest_seq, $match, $misMatch, $gapPenalty);
 						

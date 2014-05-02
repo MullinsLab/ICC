@@ -47,6 +47,7 @@ while (my $line = <IN>) {
 	}elsif ($refFlag) {
 		if ($line =~ /^>/) {
 			$refFlag = 0;
+			$len = length $refSeq;
 		}else {
 			$refSeq .= $line;
 		}		
@@ -55,12 +56,8 @@ while (my $line = <IN>) {
 		if ($line =~ /^>(.*)$/) {
 			if ($flag) {
 				my $seqLen = length $seq;
-				if ($flag == 1) {
-					$len = $seqLen;
-				}else {
-					if ($seqLen != $len) {
-						die "error: length of sequences are not same, your sequences are probably not aligned.\n";
-					}
+				if ($seqLen != $len) {
+					die "error: length of sequences are not same, your sequences are probably not aligned.\n";
 				}
 				my @seqNas = split //, $seq;
 				$nameSeq->{$seqName} = \@seqNas;
@@ -86,11 +83,11 @@ while (my $line = <IN>) {
 	}
 }
 if ($flag) {
-	my @seqNas = split //, $seq;
 	my $seqLen = length $seq;
-	if ($flag > 1 && $seqLen != $len) {
+	if ($seqLen != $len) {
 		die "error: length of sequences are not equal, your sequences are probably not aligned.\n";
 	}
+	my @seqNas = split //, $seq;
 	$nameSeq->{$seqName} = \@seqNas;
 }
 close IN;

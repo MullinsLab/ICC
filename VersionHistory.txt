@@ -1,0 +1,10 @@
+ICC Version History:
+
+* ICC_v1.0   July 29th, 2013
+  - Initial release.
+  
+* ICC_v1.1   Oct. 29th, 2013
+  - Fixes the bug that may cause incorrect clustering in IC step if consensus is not the 
+    most frequent sequence in a cluster in HIC step.
+  - Fixes the bug that outputs warning messages in calculating nucleotide frequencies 
+    if there is only one sequence after error correction.

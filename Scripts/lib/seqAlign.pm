@@ -94,10 +94,6 @@ sub Traceback_preIns {
 			$j--;
 		}
 	}
-#	print "preIns:\n";
-#	print join ('', @$consNasNoGaps)."\n";
-#	print join ('', @$readNasNoGaps)."\n";
-#	print join ('', @editTranscripts)."\n";
 	return \@editTranscripts;
 }
 
@@ -138,10 +134,6 @@ sub Traceback_preDel {
 			$j--;
 		}
 	}
-#	print "preIns:\n";
-#	print join ('', @$consNasNoGaps)."\n";
-#	print join ('', @$readNasNoGaps)."\n";
-#	print join ('', @editTranscripts)."\n";
 	return \@editTranscripts;
 }
 

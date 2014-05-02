@@ -21,7 +21,7 @@ use Getopt::Long;
 my %option = (
 	'xml' => '',
 	'ref' => '',
-	'apc' => 0.6,
+	'afc' => 0.6,
 	'rs'  => 0,
 	're'  => 0,
 	'dlx' => '',
@@ -35,18 +35,18 @@ options:
 -ref    input reference sequence used for blast in fasta format
 -rs     region start position in reference sequence
 -re     region end position in reference sequence
--apc    cutoff of read aligned part over the read length (default: $option{apc}, only above the cutoff the read is considered to be correctly aligned to reference)
+-afc    cutoff of read aligned fraction over the read length (default: $option{afc}, only above the cutoff the read is considered to be correctly aligned to reference)
 -dlx    flag for deleting xml file after running the script (default: false)
 -h      usage help
 		
 ";
 
-GetOptions (\%option, 'xml=s', 'ref=s', 'rs=i', 're=i', 'apc=f', 'dlx', 'h');
+GetOptions (\%option, 'xml=s', 'ref=s', 'rs=i', 're=i', 'afc=f', 'dlx', 'h');
 my $xml = $option{'xml'} or die $usage;
 my $refFile = $option{'ref'} or die $usage;
 my $startPos = $option{'rs'} or die $usage;
 my $endPos = $option{'re'} or die $usage;
-my $alignCut = $option{'apc'};
+my $alignCut = $option{'afc'};
 my $dlx = $option{'dlx'};
 my $help = $option{'h'};
 die $usage if $help;

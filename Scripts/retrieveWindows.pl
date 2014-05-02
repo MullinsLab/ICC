@@ -23,7 +23,7 @@ my %option = (
 	'ref' => '',
 	'rs'  => 1,
 	're'  => 0,
-	'apc' => 0.6,
+	'afc' => 0.6,
 	'ws'  => 60,
 	'ss'  => 60,
 	'dlx' => '',
@@ -37,7 +37,7 @@ options:
 -ref    input reference sequence used for blast in fasta format
 -rs     start position in reference sequence that the region start for retrieving windows (default: start at reference)
 -re     end position in referece sequence that the region end for retrieving windows (default: end at reference)
--apc    cutoff of read aligned part over the read length (default: $option{apc}, only above the cutoff the read is considered to be correctly aligned to reference)
+-afc    cutoff of read aligned fraction over the read length (default: $option{afc}, only above the cutoff the read is considered to be correctly aligned to reference)
 -ws     window size (default: $option{ws})
 -ss     stride size (default: $option{ss})
 -dlx    flag for deleting xml file after running the script (default: false)
@@ -45,12 +45,12 @@ options:
 		
 ";
 
-GetOptions (\%option, 'xml=s', 'ref=s', 'rs=i', 're=i', 'apc=f', 'ws=i', 'ss=i', 'dlx', 'h');
+GetOptions (\%option, 'xml=s', 'ref=s', 'rs=i', 're=i', 'afc=f', 'ws=i', 'ss=i', 'dlx', 'h');
 my $xml = $option{'xml'} or die $usage;
 my $refFile = $option{'ref'} or die $usage;
 my $wrStart = $option{'rs'};
 my $wrEnd = $option{'re'};
-my $alignCut = $option{'apc'};
+my $alignCut = $option{'afc'};
 my $wSize = $option{'ws'};
 my $sSize = $option{'ss'};
 my $dlx = $option{'dlx'};

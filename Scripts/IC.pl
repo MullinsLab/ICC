@@ -14,7 +14,7 @@
 #######################################################################################
 
 use strict;
-use lib "/home/wdeng/ICC_v1.0/Scripts/lib";
+use lib "/home/wdeng/ICC_v1.1/Scripts/lib";
 use utils;
 use paths;
 use Getopt::Long;
@@ -54,7 +54,7 @@ my $gapPenalty = $option{'gp'};
 my $minClusterSize = $option{'cs'};
 my $scriptPath = $paths::scriptPath;
 my $name = '';
-my (@names, %nameSeq, %picked, $dist, $indel);
+my (@names, %nameSeq, %picked, $dist);
 open IN, $inFile or die "couldn't open $inFile: $!\n";
 while (my $line = <IN>) {
 	chomp $line;
@@ -73,9 +73,8 @@ open DIST, $inDist or die "couldn't open $inDist: $!\n";
 while (my $line = <DIST>) {
 	chomp $line;
 	next if $line =~ /^\s*$/;
-	my ($first_seq, $snd_seq, $indels, @dists) = split /\t/, $line;
-	$dist->{$first_seq}->{$snd_seq} = \@dists;
-	$indel->{$first_seq}->{$snd_seq} = $indel->{$snd_seq}->{$first_seq} = $indels;
+	my ($first_seq, $snd_seq) = split /\t/, $line;
+	$dist->{$first_seq}->{$snd_seq} = 1;
 }
 close DIST;
 
@@ -93,7 +92,7 @@ while (@names) {
 		$count++;
 		my @cluster_names = ();
 		my $central_seq = $nameSeq{$central_name};
-		$central_seq =~ s/\-//g;
+		#$central_seq =~ s/\-//g;
 		
 		push @cluster_names, $central_name;		
 		my $central_duplicates = 1;
@@ -105,9 +104,8 @@ while (@names) {
 			foreach my $rest_name (@names) {
 				unless ($picked{$rest_name}) {	# rest name hasn't been picked by previous clustering
 					my $rest_seq = $nameSeq{$rest_name};
-					$rest_seq =~ s/\-//g;
-					if ($dist->{$central_seq}->{$rest_seq} || $dist->{$rest_seq}->{$central_seq}) {
-						
+					#$rest_seq =~ s/\-//g;
+					if ($dist->{$central_seq}->{$rest_seq} || $dist->{$rest_seq}->{$central_seq}) {						
 							$picked{$rest_name} = 1;
 							push @cluster_names, $rest_name;
 							my $rest_duplicates = 1;
@@ -138,7 +136,7 @@ while (@names) {
 				my $flag = 0;
 				foreach my $name (@cluster_names) {
 					my $seq = $nameSeq{$name};
-					$seq =~ s/\-//g;
+					#$seq =~ s/\-//g;
 					if ($consensus eq $seq) {
 						$flag = 1;
 						last;

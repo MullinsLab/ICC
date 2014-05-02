@@ -1,4 +1,4 @@
-ICC 1.0
+ICC - Indel and carryforward correction
 Contact: dengw@uw.edu
 
 ========
@@ -19,13 +19,13 @@ ICC has been tested on systems running Linux, Mac OS X and MS Windows.
 Installation
 ============
 
-1. Download ICC_v1.0.zip to your preferred directory.
-2. Unzip ICC_v1.0.zip.
-3. Run "perl config.pl" in directory ICC_v1.0/Scripts.
+1. Download ICC_vx.x.zip to your preferred directory.
+2. Unzip ICC_vx.x.zip.
+3. Run "perl config.pl" in directory ICC_vx.x/Scripts.
 
-Note: NCBI's BLAST+ packages (version 2.2.27+) for Linux, Mac and Windows have been 
+Note: x.x is the version number. NCBI's BLAST+ packages (version 2.2.27+) for Linux, Mac and Windows have been 
 pre-installed in ICC package. config.pl will automatically detect your operating system 
-and configure the paths to run BLAST and perl scripts. If you move installed ICC_v1.0 
+and configure the paths to run BLAST and perl scripts. If you move installed ICC_vx.x 
 to other place, you need to run config.pl again before you execute ICC package.
 
 =======================
@@ -158,7 +158,7 @@ _aa_hyplo_freq.txt is the file listing the frequency of each amino acid hyplotyp
 Example
 =======
 
-The package includes example dataset you can test in the directory of ICC_v1.0/Example.
+The package includes example dataset you can test in the directory of ICC_vx.x/Example.
 
 ------------------------
 How to run example data?

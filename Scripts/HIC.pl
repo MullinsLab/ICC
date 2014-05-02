@@ -14,7 +14,7 @@
 #######################################################################################
 
 use strict;
-use lib "/home/wdeng/ICC_v1.0/Scripts/lib";
+use lib "/home/wdeng/ICC_v1.1/Scripts/lib";
 use seqAlign;
 use utils;
 use paths;
@@ -78,6 +78,7 @@ if (-e $outputDir) {
 mkdir $outputDir;
 open OUTPUT,">$outFile" or die "couldn't open $outFile: $!\n";
 open DIST, ">$outDist" or die "couldn't open $outDist: $!\n";
+my %pwCalculated = my %dist = my %consDuplicates = ();
 while (@names) {
 	my $central_name = shift @names;
 	next if ($central_name =~ /^Reference_1$/i);
@@ -86,7 +87,7 @@ while (@names) {
 		$count++;
 		my @cluster_names = ();
 		my $central_seq = $nameSeq{$central_name};
-		$central_seq =~ s/\-//g;
+		#$central_seq =~ s/\-//g;
 		
 		push @cluster_names, $central_name;		
 		my $central_duplicates = 1;
@@ -98,13 +99,13 @@ while (@names) {
 			foreach my $rest_name (@names) {
 				unless ($picked{$rest_name}) {	# rest name hasn't been picked by previous clustering
 					my $rest_seq = $nameSeq{$rest_name};
-					$rest_seq =~ s/\-//g;
+					#$rest_seq =~ s/\-//g;
 					my $rest_duplicates = 1;
 					if ($rest_name =~ /_(\d+)$/) {
 						$rest_duplicates = $1;
 					}
 					my $etStrs = seqAlign::PairwiseAlign ($central_seq, $rest_seq, $match, $misMatch, $gapPenalty);
-				
+					$pwCalculated{$central_name}{$rest_name} = 1;
 					if (@$etStrs) {
 						my $flag = my $indels = 0;
 						foreach my $etStr (@$etStrs) {
@@ -205,8 +206,7 @@ while (@names) {
 										last;
 									}
 								}
-							}
-							
+							}							
 							unless ($flag) {
 								$picked{$rest_name} = 1;
 								push @cluster_names, $rest_name;
@@ -217,6 +217,7 @@ while (@names) {
 						}
 						if ($flag) {	# not picked, write distance into file
 							print DIST "$central_seq\t$rest_seq\t$indels\t", join ("\t", @$etStrs), "\n";
+							$dist{$central_seq}{$rest_seq} = 1;
 						}
 					}				
 				}
@@ -228,7 +229,7 @@ while (@names) {
 			print OUT ">$name\n$nameSeq{$name}\n";
 		}
 		close OUT;
-		
+		my $consName = $central_name;
 		my $consensus = $nameSeq{$central_name};
 		if ($total_rest > $central_duplicates) {
 			my $localOutAlignFile = $localOutFile;
@@ -240,9 +241,10 @@ while (@names) {
 				my $flag = 0;
 				foreach my $name (@cluster_names) {
 					my $seq = $nameSeq{$name};
-					$seq =~ s/\-//g;
+					#$seq =~ s/\-//g;
 					if ($consensus eq $seq) {
 						$flag = 1;
+						$consName = $name;
 						last;
 					}
 				}
@@ -254,8 +256,46 @@ while (@names) {
 		foreach my $name (@cluster_names) {
 			print OUTPUT ">$name\n$consensus\n";
 		}
+		$consDuplicates{$consName} = $central_duplicates + $total_rest;
+		#print "central: $central_name, consensus: $consName";
+		#if ($central_name ne $consName) {
+		#	print "\t1";
+		#}
+		#print "\n";
 	}
 }
 close OUTPUT;
+
+my %indelOnlyPicked = ();
+my @consNames = sort {$consDuplicates{$b} <=> $consDuplicates{$a}} keys %consDuplicates;
+while (@consNames) {
+	my $consName = shift @consNames;
+	if ($consDuplicates{$consName} >= $minClusterSize) {
+		#print "\nconsName: $consName\n";
+		if (!$indelOnlyPicked{$consName}) {
+			my $central_seq = $nameSeq{$consName};
+			#$central_seq =~ s/\-//g;
+			foreach my $restName (@consNames) {
+				if (!$indelOnlyPicked{$restName}) {
+					my $rest_seq = $nameSeq{$restName};				
+					#$rest_seq =~ s/\-//g;
+					if ($pwCalculated{$consName}{$restName} || $pwCalculated{$restName}{$consName}) {
+						if ($dist{$central_seq}{$rest_seq} || $dist{$rest_seq}{$central_seq}) {
+							$indelOnlyPicked{$restName} = 1;
+						}
+					}else {
+						my $etStrs = seqAlign::PairwiseAlign ($central_seq, $rest_seq, $match, $misMatch, $gapPenalty);				
+						if (@$etStrs) {	# only indel differences
+							my $indels = -1;					
+							#print "-1 consName: $consName; rest: $restName\n";
+							print DIST "$central_seq\t$rest_seq\t$indels\t", join ("\t", @$etStrs), "\n";
+							$indelOnlyPicked{$restName} = 1;
+						}
+					}
+				}				
+			}
+		}
+	}
+}
 close DIST;
 print "Done!\n";
