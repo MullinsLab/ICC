@@ -14,7 +14,7 @@
 #######################################################################################
 
 use strict;
-use lib "/home/wdeng/ICC_v1.1/Scripts/lib";
+use lib "/home/wdeng/ICC/Scripts/lib";
 use seqAlign;
 use Getopt::Long;
 use File::Path;
@@ -83,6 +83,7 @@ if (-e $outputDir) {
 }
 mkdir $outputDir;
 open OUTPUT,">$outFile" or die "couldn't open $outFile: $!\n";
+print "Correcting carryforward errors ...\n";
 while (@names) {
 	my $central_name = shift @names;
 	unless ($picked{$central_name}) {	# central_name hasn't been picked by previous clustering
