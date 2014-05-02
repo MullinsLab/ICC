@@ -15,7 +15,6 @@
 
 use strict;
 use Getopt::Long;
-use File::Basename;
 
 my %option = (
 	'is' => '',
@@ -56,10 +55,10 @@ unless ($lenCut =~ /^\d+$/) {
 unless ($qualCut =~ /^\d+$/) {
 	die "average quality cutoff must be a positive integer number\n";
 }
-
+my $start = time();
 my $totalSeq = my $totalQual = 0;
 my $seq = my $seqName = "";
-my (%nameStatus, %passFilterName);
+my %failedName = ();
 my $belowLenCutCount = my $belowAllowNCount = my $belowQualCutCount = my $passFilterCount = my $failedCount = 0;
 open INFASTA, $inFasta or die "couldn't open $inFasta: $!\n";
 while (my $line = <INFASTA>) {
@@ -67,17 +66,13 @@ while (my $line = <INFASTA>) {
 	next if $line =~ /^\s*$/;
 	if ($line =~ /^>(\S+)/) {
 		if ($seq) {
-			my $passFilterFlag = 1;
 			my $len = length $seq;
 			if ($len < $lenCut) {
-				$passFilterFlag = 0;
 				$belowLenCutCount++;
+				$failedName{$seqName} = 1;
 			}elsif ($seq =~ /N/) {	# reads with N
-				$passFilterFlag = 0;
-				$belowAllowNCount++;					
-			}
-			if ($passFilterFlag) {
-				$passFilterName{$seqName} = 1;
+				$belowAllowNCount++;
+				$failedName{$seqName} = 1;					
 			}
 		}
 		$seqName = $1;
@@ -89,17 +84,13 @@ while (my $line = <INFASTA>) {
 }
 # last sequence
 if ($seq) {
-	my $passFilterFlag = 1;
 	my $len = length $seq;
 	if ($len < $lenCut) {
-		$passFilterFlag = 0;
 		$belowLenCutCount++;
+		$failedName{$seqName} = 1;
 	}elsif ($seq =~ /N/) {	# reads with N		
-		$passFilterFlag = 0;
 		$belowAllowNCount++;
-	}
-	if ($passFilterFlag) {
-		$passFilterName{$seqName} = 1;
+		$failedName{$seqName} = 1;
 	}
 }
 $seqName = $seq = '';
@@ -123,14 +114,14 @@ if ($qualCut > 0) {
 				}
 				my $avgQual = $totalQuals / scalar @quals;
 				if ($avgQual < $qualCut) {
-					$passFilterName{$seqName} = 0;
+					$failedName{$seqName} = 1;
 					$belowQualCutCount++;
 				}
 			}
 			$seqName = $1;
 			@quals = ();
 			$totalQual++;
-		}elsif ($passFilterName{$seqName}) {
+		}elsif (!$failedName{$seqName}) {
 			my @partialQuals = split /\s+/, $line;
 			push @quals, @partialQuals;
 		}
@@ -142,7 +133,7 @@ if ($qualCut > 0) {
 		}
 		my $avgQual = $totalQuals / scalar @quals;
 		if ($avgQual < $qualCut) {
-			$passFilterName{$seqName} = 0;
+			$failedName{$seqName} = 1;
 			$belowQualCutCount++;
 		}
 	}
@@ -159,13 +150,13 @@ while (my $line = <INFASTA>) {
 	next if $line =~ /^\s*$/;
 	if ($line =~ /^>(\S+)/) {
 		$seqName = $1;
-		if ($passFilterName{$seqName}) {
+		if (!$failedName{$seqName}) {
 			print OUTFASTA ">$seqName\n";
 			$passFilterCount++;
 		}else {
 			$failedCount++;
 		}
-	}elsif ($passFilterName{$seqName}) {
+	}elsif (!$failedName{$seqName}) {
 		print OUTFASTA "$line\n";
 	}
 }
@@ -180,16 +171,19 @@ while (my $line = <INQUAL>) {
 	next if $line =~ /^\s*$/;
 	if ($line =~ /^>(\S+)/) {
 		$seqName = $1;
-		if ($passFilterName{$seqName}) {
+		if (!$failedName{$seqName}) {
 			print OUTQUAL ">$seqName\n";
 		}
-	}elsif ($passFilterName{$seqName}) {
+	}elsif (!$failedName{$seqName}) {
 		print OUTQUAL "$line\n";
 	}
 }
 close OUTQUAL;
 close INQUAL;
 
+my $end = time();
+my $duration = $end - $star;
+
 print "combined there are $passFilterCount meet the cutoff. $failedCount don't.\n";
-print "All done.\n";
+print "Duration: $duration s. All done.\n";
 
