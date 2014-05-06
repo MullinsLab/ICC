@@ -63,9 +63,10 @@ my $fileName = basename($xml);
 $fileName =~ s/\.(.*?)$//;
 my $queryCount = my $queryLen = my $hitCount = my $fwdHitCount = my $rvsHitCount = my $hitFlag = my $flag = my $start = my $end = 0;
 my $qStart = my $qEnd = my $alignCutFlag = my $windowFlag = my $wCutoffHitCount = my $notPassWcutHitCount = my $frame = 0;
-my $passCutoffCount = my $notPassCutoffCount = my $lastWSize = 0;
+my $passCutoffCount = my $notPassCutoffCount = my $lastWSize = my $fullWindowReadCount = 0;
 my $refSeq = my $alignedReadSeq = my $alignedRefSeq = '';
 my ($refRegionSeq, $refRegionStatus, $readRegionSeq, $readRegionStatus, $readRegionDup, %fwdregionFlag, %revregionFlag);
+my $startTime = time();
 open REF, $refFile or die "couldn't open $refFile: $!\n";
 while (my $line = <REF>) {
 	chomp $line;
@@ -148,7 +149,7 @@ while (my $line = <XML>) {
 		my $alignedRefLen = length $alignedRefSeq;
 		my @alignedRefNas = split //, $alignedRefSeq;
 		$hitFlag = $alignCutFlag = $windowFlag = 0;
-
+		my $fullWindowReadFlag = 0;
 		for (my $i = $wrStart; $i <= $wrEnd - $wSize + $sSize; $i += $sSize) {
 			my $realWSize = $wSize;
 			my $restLen = $wrEnd - $i + 1;
@@ -157,6 +158,10 @@ while (my $line = <XML>) {
 			}
 			last if ($end < $i + $realWSize - 1);	# didn't cover last part
 			next if ($start > $i);	# didn't cover biginning part
+			if (!$fullWindowReadFlag) {
+				$fullWindowReadFlag = 1;
+				++$fullWindowReadCount;
+			}
 			my $preNaLen = my $startIdx = my $naLen = my $realLen = 0;
 			my $preLen = $i - $start;
 			while ($preNaLen < $preLen) {
@@ -186,7 +191,7 @@ while (my $line = <XML>) {
 }
 close XML;
 print "Total queries: $queryCount, hits: $hitCount, hits pass align length percent cutoff of $alignCut: $passCutoffCount, not pass: $notPassCutoffCount\n";
-print "hits pass window size of $wSize: $wCutoffHitCount, not pass: $notPassWcutHitCount\n";
+print "hits pass window size of $wSize: $wCutoffHitCount, not pass: $notPassWcutHitCount, Read counts of covering at least one window: $fullWindowReadCount\n";
 
 foreach my $regionStart (sort {$a <=> $b} keys %$readRegionSeq) {
 	my $realWSize = $wSize;
@@ -245,6 +250,9 @@ if ($dlx) {
 	print "removing $xml ...\n";
 	unlink $xml;
 }
+my $endTime = time();
+my $duration = $endTime - $startTime;
+print "Time duration: $duration s.\n";
 
 
 sub ReverseComplement {

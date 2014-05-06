@@ -14,7 +14,7 @@
 #######################################################################################
 
 use strict;
-use lib "/home/wdeng/ICC_v1.1/Scripts/lib";
+use lib "/home/wdeng/ICC/Scripts/lib";
 use paths;
 use utils;
 use File::Basename;
@@ -32,6 +32,7 @@ my %option = (
 	'mm' => -9,
 	'gp' => -15,
 	'u'  => 0.00013,
+	'ar' => '',
 	'h'  => '',
 );
 
@@ -45,11 +46,12 @@ options:
 -mt     match score (default: $option{mt})
 -mm     mismatch score (default: $option{mm})
 -gp     gap penalty (default: $option{gp})
+-ar	assemble corrected reads in each window into full length reads
 -h      usage help
 
 ";
 
-GetOptions (\%option, 'od=s', 'cf=f', 'u=f', 'mt=f', 'mm=f', 'gp=f', 'cs=i', 'h');
+GetOptions (\%option, 'od=s', 'cf=f', 'u=f', 'mt=f', 'mm=f', 'gp=f', 'cs=i', 'ar', 'h');
 
 my $outDir = $option{'od'} or die $usage;
 my $cfCut = $option{'cf'};
@@ -58,6 +60,7 @@ my $u = $option{'u'};
 my $match = $option{'mt'};
 my $mismatch  = $option{'mm'};
 my $gapPenalty = $option{'gp'};
+my $assembleReads = $option{'ar'};
 my $help = $option{'h'};
 die $usage if $help;
 my $inDir = getcwd();
@@ -115,7 +118,9 @@ print SNV "Position\tConsensus\t-\tA\tC\tG\tT\tCoverage\n";
 
 my @sortDirs = sort by_number @workingDirs;
 foreach my $subdir (@sortDirs) {
+	#print "subdir0: $subdir\n";
 	$subdir = $inDir.'/'.$subdir;
+	
 	if (-d $subdir) {
 		if ($subdir =~ /Region(\d+)\-(\d+)/i) {
 			#my $timeStart = time();
@@ -162,10 +167,9 @@ foreach my $subdir (@sortDirs) {
 								}
 								close IN;
 								close REF;
-								
 								# compress to unique reads
 								system ("perl $scriptPath/uniqueReads.pl -if $inFile -of $uniqFile");
-								
+
 								print "Correcting homopolymer indels ...\n";
 								my $hmindelCorrOut = my $distOut = $uniqFile;
 								$hmindelCorrOut =~ s/\.fas/_HIC.fas/;
@@ -183,14 +187,14 @@ foreach my $subdir (@sortDirs) {
 								my $indelCorrOutUniq = $indelCorrOut;
 								$indelCorrOutUniq =~ s/\.fas/_U.fas/;
 								system ("perl $scriptPath/uniqueReads.pl -if $indelCorrOut -of $indelCorrOutUniq -uf");
-								
+
 								print "Correcting carryforward errors ...\n";
 								my $indelCfCorrOut = $indelCorrOutUniq;
 								$indelCfCorrOut =~ s/_IC_U\.fas/_CC.fas/;
 								system ("perl $scriptPath/CC.pl -if $indelCorrOutUniq -of $indelCfCorrOut -cf $cfCut -mt 10 -mm -10 -gp -10");
 								$indelCfCorrOutUniq = $indelCfCorrOut;
 								$indelCfCorrOutUniq =~ s/\.fas/_U.fas/;
-								system ("perl $scriptPath/uniqueReads.pl -if $indelCfCorrOut -of $indelCfCorrOutUniq -uf");	
+								system ("perl $scriptPath/uniqueReads.pl -if $indelCfCorrOut -of $indelCfCorrOutUniq -uf");									
 								unlink $distOut;			
 							}
 						}						
@@ -299,9 +303,6 @@ foreach my $subdir (@sortDirs) {
 				print AH "$aaSeq\n";
 			}
 			print AHF "\n";
-			#my $timeEnd = time();
-			#my $timeDuration = $timeEnd - $timeStart;
-			#print "\ntime duration in manipulating directory $subdir: ". strftime("\%H:\%M:\%S", gmtime($timeDuration)). "\n\n";
 		}			
 	}
 }
@@ -312,9 +313,204 @@ close AH;
 close AHF;
 close SNV;
 
+chdir $inDir;
+
+if ($assembleReads) {
+	my (@readnames, %readnameStatus, %readSeq, %corrreadSeq); 
+	foreach my $subdir (@sortDirs) {
+		#print "subdir1: $subdir\n";
+		#my $subdir2 = $inDir.'/'.$subdir1;
+		#print "subdir2: $subdir2\n";
+		if ($subdir =~ /Region(\d+)\-(\d+)/i) {			
+			opendir SUB, $subdir or die "couldn't open $subdir\n";
+			while (my $ssubdir = readdir SUB) {
+				unless ($ssubdir =~ /^\./) {
+					$ssubdir = $subdir.'/'.$ssubdir;
+				#	print "ssubdir: $ssubdir\n";
+					if (-d $ssubdir && $ssubdir =~ /F_R_combo/) {						
+						opendir SSUB, $ssubdir or die "couldn't open $ssubdir: $!\n";
+						while (my $file = readdir SSUB) {
+							if ($file =~ /_combo\.fas$/) {
+								my $name = '';
+								$file = "$ssubdir/$file";
+				#				print "file: $file\n";
+								open COMBO, $file or die "couldn't open $file: $!\n";
+								while (my $line = <COMBO>) {
+									chomp $line;
+									next if $line =~ /^\s*$/;
+									if ($line =~ /^>(\S+)/) {
+										$name = $1;
+										if (!$readnameStatus{$name}) {
+											$readnameStatus{$name} = 1;
+											push @readnames, $name;
+										}
+									}else {
+										$readSeq{$name} .= $line;
+									}
+								}
+								close COMBO;
+								last;
+							}
+						}
+						closedir SSUB;
+					}
+				}
+			}
+			closedir SUB;
+		}else {
+			die "No region directory\n";
+		}
+		my @regionreadnames = ();				
+		my $iccOutDir = $subdir.'/F_R_combo/'.$outDir;															
+		if (-d $iccOutDir) {
+			#print "==$iccOutDir==\n";
+			my $nameFile = my $hicnameFile = my $icnameFile = my $ccnameFile = my $ccreadFile = '';
+			my %uniqReadnames = my %nameUniqname = my %uniqnameSeq = ();
+			opendir ICC, $iccOutDir or die "couldn't open $iccOutDir: $!\n";
+			while (my $file = readdir ICC) {
+				if ($file =~ /combo_U.fas.name$/) {
+					$nameFile = $file;
+				}elsif ($file =~ /combo_U_HIC_U.fas.name$/) {
+					$hicnameFile = $file;
+				}elsif ($file =~ /combo_U_IC_U.fas.name$/) {
+					$icnameFile = $file;
+				}elsif ($file =~ /combo_U_CC_U.fas.name$/) {
+					$ccnameFile = $file;
+				}elsif ($file =~ /combo_U_CC_U.fas$/) {
+					$ccreadFile = $file;
+				}
+			}
+			closedir ICC;
+			if ($nameFile) {
+				$nameFile = $iccOutDir.'/'.$nameFile;
+				open NAME, $nameFile or die "couldn't open $nameFile: $!\n";
+				while (my $line = <NAME>) {
+					chomp $line;
+					next if $line =~ /^\s*$/;
+					if ($line =~ /^(\S+)\s+(\S+)$/) {
+						my $uniqName = $1;
+						my $namestring = $2;
+						my @names = split /,/, $namestring;						
+						push @regionreadnames, @names;
+						push @{$uniqReadnames{$uniqName}}, @names;
+					}
+				}
+				close NAME;
+			}else {
+				die "Couldn't find combo_U.fas.name file\n";
+			}
+			if ($hicnameFile) {
+				$hicnameFile = $iccOutDir.'/'.$hicnameFile;
+				open NAME, $hicnameFile or die "couldn't open $hicnameFile: $!\n";
+				while (my $line = <NAME>) {
+					chomp $line;
+					next if $line =~ /^\s*$/;
+					if ($line =~ /^(\S+)\s+(\S+)$/) {
+						my $uniqName = 'HIC_'.$1;
+						my $namestring = $2;
+						my @names = split /,/, $namestring;
+						foreach my $name (@names) {
+							push @{$uniqReadnames{$uniqName}}, @{$uniqReadnames{$name}};
+							delete $uniqReadnames{$name};
+						}
+					}
+				}
+				close NAME;
+			}else {
+				die "Couldn't find combo_U_HIC_U.fas.name file\n";
+			}
+			if ($icnameFile) {
+				$icnameFile = $iccOutDir.'/'.$icnameFile;
+				open NAME, $icnameFile or die "couldn't open $icnameFile: $!\n";
+				while (my $line = <NAME>) {
+					chomp $line;
+					next if $line =~ /^\s*$/;
+					if ($line =~ /^(\S+)\s+(\S+)$/) {
+						my $uniqName = 'IC_'.$1;
+						my $namestring = $2;
+						my @names = split /,/, $namestring;
+						foreach my $name (@names) {
+							$name = 'HIC_'.$name;
+							push @{$uniqReadnames{$uniqName}}, @{$uniqReadnames{$name}};
+							delete $uniqReadnames{$name};
+						}
+					}
+				}
+				close NAME;
+			}else {
+				die "Couldn't find combo_U_IC_U.fas.name file\n";
+			}
+			if ($ccnameFile) {
+				$ccnameFile = $iccOutDir.'/'.$ccnameFile;
+				my $outFile = $ccnameFile.'.out';
+				open NAME, $ccnameFile or die "couldn't open $ccnameFile: $!\n";								
+				open OUT, ">$outFile" or die "couldn't open $outFile: $!\n";
+				while (my $line = <NAME>) {
+					chomp $line;
+					next if $line =~ /^\s*$/;
+					if ($line =~ /^(\S+)\s+(\S+)$/) {
+						my $origuniqname = $1;
+						my $uniqName = 'CC_'.$1;
+						my $namestring = $2;
+						my @names = split /,/, $namestring;
+						foreach my $name (@names) {
+							$name = 'IC_'.$name;
+							foreach my $readname (@{$uniqReadnames{$name}}) {
+								$nameUniqname{$readname} = $origuniqname;
+							}
+							push @{$uniqReadnames{$uniqName}}, @{$uniqReadnames{$name}};
+							delete $uniqReadnames{$name};
+						}						
+						print OUT $uniqName, " ", join(',', @{$uniqReadnames{$uniqName}}), "\n";
+					}
+				}
+				close NAME;
+			}else {
+				die "Couldn't find combo_U_CC_U.fas.name file\n";
+			}
+			if ($ccreadFile) {
+				my $name = '';
+				$ccreadFile = $iccOutDir.'/'.$ccreadFile;
+				open SEQ, $ccreadFile or die "couldn't open $ccreadFile: $!\n";
+				while (my $line = <SEQ>) {
+					chomp $line;
+					next if $line =~ /^\s*$/;
+					if ($line =~ /^>(\S+)/) {
+						$name = $1;
+					}else {
+						$uniqnameSeq{$name} .= $line;
+					}
+				}
+				close SEQ;
+			}else {
+				die "Couldn't find combo_U_CC_U.fas file\n";
+			}
+			foreach my $readname (@regionreadnames) {
+				my $uniqname = $nameUniqname{$readname};
+				my $seq = $uniqnameSeq{$uniqname};
+				$corrreadSeq{$readname} .= $seq;
+				
+			}
+		}
+	}
+	my $aReadsb4Corr = $inDir.'/beforeCorr_assembled.fas';
+	my $aReadsAfterCorr = $inDir.'/afterCorr_assembled.fas';
+	open BC, ">$aReadsb4Corr" or die "couldn't open $aReadsb4Corr: $!\n";
+	open AC, ">$aReadsAfterCorr" or die "couldn't open $aReadsAfterCorr: $!\n";
+	foreach my $name (@readnames) {
+		unless ($name =~ /Reference/i) {
+			print BC ">$name\n$readSeq{$name}\n";
+			print AC ">$name\n$corrreadSeq{$name}\n";
+		}
+		
+	}
+	close BC;
+	close AC;
+}
+
 my $endTime = time();
 my $duration = $endTime - $startTime;
-my $hrs = int ($duration / 86400 * 100000 + 0.5) / 100000;
+my $hrs = int ($duration / 3600 * 100000 + 0.5) / 100000;
 print "\nAll done!\ntotal time duration: $hrs hour(s).\n\n";
 #print "\nAll done!\ntotal time duration: ". strftime("\%H:\%M:\%S", gmtime($duration)). "\n\n";
 

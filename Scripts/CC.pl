@@ -14,7 +14,7 @@
 #######################################################################################
 
 use strict;
-use lib "/home/wdeng/ICC_v1.1/Scripts/lib";
+use lib "/home/wdeng/ICC/Scripts/lib";
 use seqAlign;
 use Getopt::Long;
 use File::Path;

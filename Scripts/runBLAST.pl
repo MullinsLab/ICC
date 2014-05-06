@@ -16,7 +16,7 @@
 use strict;
 use Getopt::Long;
 use File::Basename;
-use lib "/home/wdeng/ICC_v1.1/Scripts/lib";
+use lib "/home/wdeng/ICC/Scripts/lib";
 use paths;
 
 my %option = (
