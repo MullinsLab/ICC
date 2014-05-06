@@ -25,7 +25,6 @@ use paths;
 my %option = (
 	'in'   => '',
 	'ref'  => '',
-	'out'  => '',
 	'mt'   => 1,
 	'mm'   => -1,
 	'go'   => 1,
@@ -38,7 +37,6 @@ my $usage = "\nUsage: perl runBLAST.pl [-option value]
 
 options:  
 -in      input reads fasta file
--out     BLAST output xml file
 -ref     reference fasta file
 -mt      match score (default: $option{'mt'})
 -mm      mismatch score (default: $option{'mm'})
@@ -49,11 +47,10 @@ options:
 
 ";
 
-GetOptions (\%option, 'in=s', 'ref=s', 'out=s', 'bp=s', 'mt=i', 'mm=i','go=i', 'ge=i', 'proc=i', 'h');
+GetOptions (\%option, 'in=s', 'ref=s', 'bp=s', 'mt=i', 'mm=i','go=i', 'ge=i', 'proc=i', 'h');
 
 my $inFasta = $option{'in'} or die $usage;
 my $refFasta = $option{'ref'} or die $usage;
-my $outXML = $option{'out'} or die $usage;
 my $reward = $option{'mt'};
 my $penalty = $option{'mm'};
 my $gapopen = $option{'go'};
@@ -62,18 +59,16 @@ my $proc = $option{'proc'};
 my $help = $option{'h'};
 die $usage if ($help);
 my $blastPath = $paths::blastPath;
-
+my $time1 = time();
 print "Making BLAST db ... ";
 my $formatdbLog = $refFasta . ".log";
 my $rv = 0;
-=head
 $rv = system("$blastPath/makeblastdb -in $refFasta -dbtype nucl -logfile $formatdbLog");
 unless ($rv == 0) {
 	die "\nmakeblastdb failed: $rv\n";
 }
 print "done.\n";
-=cut
-my $time1 = time();
+
 my $readCount = 0;
 my $xmlDir = 'xmlOutput';
 my $fastaDir = 'fastaOutput';
@@ -145,4 +140,4 @@ if (-e $fastaDir) {
 my $time2 = time();
 my $duration = $time2 - $time1;
 print "\nproc: $proc\n";
-print "duration: $duration. done.\n";
+print "duration: $duration s. All done!\n";

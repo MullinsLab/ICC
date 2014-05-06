@@ -72,7 +72,6 @@ if ($inDir =~ /(.*)\/(.*?)$/) {
 	$pref_name = $inDir;
 }
 
-my $lastWSize = 0;
 my $refSeq = '';
 my %readRgSeq = my %readRgSeqStatus = my %rgDirectionFlag = ();
 my $queryCount = my $hitCount = my $passCutoffCount = my $notPassCutoffCount = my $wCutoffHitCount = my $notPassWcutHitCount = my $fullWindowReadCount = 0;
@@ -213,7 +212,7 @@ while (my $file = readdir XMLDIR) {
 					my $realWSize = $wSize;
 					my $restLen = $wrEnd - $i + 1;
 					if ($restLen < $wSize) {
-						$realWSize = $lastWSize = $restLen;
+						$realWSize = $restLen;
 					}
 					last if ($end < $i + $realWSize - 1);	# didn't cover last part
 					next if ($start > $i);	# didn't cover biginning part
@@ -263,7 +262,7 @@ closedir XMLDIR;
 foreach my $regionStart (sort {$a <=> $b} keys %readRgSeq) {
 	my $realWSize = $wSize;
 	if ($regionStart + $wSize - 1 > $wrEnd) {
-		$realWSize = $lastWSize;
+		$realWSize = $wrEnd - $regionStart + 1;
 	}
 	my $refRgSeq = substr($refSeq, $regionStart - 1, $realWSize);
 	my $regionEnd = $regionStart + $realWSize - 1;
