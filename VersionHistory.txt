@@ -8,3 +8,12 @@ ICC Version History:
     most frequent sequence in a cluster in HIC step.
   - Fixes the bug that outputs warning messages in calculating nucleotide frequencies 
     if there is only one sequence after error correction.
+
+* ICC_v1.2   May 6th, 2014
+  - Adds an option in runICC.pl to assemble reads from continuous windows
+    before and after ICC (please note that, if there is overlap or gap between
+    windows, the assembling will not perform correctly)
+    
+* ICC_v2.0 June 20, 2014
+  - ICC can be run in parallel, which allows users to define number of processors to run 
+    ICC based on their computing resource and dramatically reduces the running time.
