@@ -157,7 +157,6 @@ foreach my $subdir (@sortDirs) {
 								# compress to unique reads
 								system ("perl $scriptPath/uniqueReads.pl -if $inFile -of $uniqFile >$logFile");
 
-								#print "Correcting homopolymer indels ...\n";
 								my $hmindelCorrOut = my $distOut = $uniqFile;
 								$hmindelCorrOut =~ s/\.fas/_HIC.fas/;
 								$distOut =~ s/\.fas/_dist.txt/;
@@ -167,7 +166,6 @@ foreach my $subdir (@sortDirs) {
 								$hmindelCorrOutUniq =~ s/\.fas/_U.fas/;
 								system ("perl $scriptPath/uniqueReads.pl -if $hmindelCorrOut -of $hmindelCorrOutUniq -uf >>$logFile");
 
-								#print "Correcting indels ...\n";
 								my $indelCorrOut = $hmindelCorrOutUniq;
 								$indelCorrOut =~ s/_HIC_U\.fas/_IC.fas/;
 								system ("perl $scriptPath/IC.pl -if $hmindelCorrOutUniq -id $distOut -of $indelCorrOut -cs $minClusterSize -mt $match -mm $mismatch -gp $gapPenalty >>$logFile");
@@ -175,7 +173,6 @@ foreach my $subdir (@sortDirs) {
 								$indelCorrOutUniq =~ s/\.fas/_U.fas/;
 								system ("perl $scriptPath/uniqueReads.pl -if $indelCorrOut -of $indelCorrOutUniq -uf >>$logFile");
 
-								#print "Correcting carryforward errors ...\n";
 								my $indelCfCorrOut = $indelCorrOutUniq;
 								$indelCfCorrOut =~ s/_IC_U\.fas/_CC.fas/;
 								system ("perl $scriptPath/CC.pl -if $indelCorrOutUniq -of $indelCfCorrOut -cf $cfCut -mt 10 -mm -10 -gp -10 >>$logFile");
@@ -203,7 +200,6 @@ foreach my $subdir (@sortDirs) {
 			close OUT;
 										
 			# calculate Nt frequency
-			#print "Calculating nucleotide frequencies ...\n";
 			my $afaFile = $indelCfCorrOutUniq_ref;
 			$afaFile =~ s/\.fas/\.afa/;
 			system ("perl $scriptPath/alignRegion.pl -if $indelCfCorrOutUniq_ref -oa $afaFile -mt $match -mm $mismatch -gp $gapPenalty -uf");		
@@ -217,7 +213,6 @@ foreach my $subdir (@sortDirs) {
 			my $alignedRefSeq = <AFA>;
 			my @alignedRefNas = split //, $alignedRefSeq;
 			close AFA;
-			#print "NF: $nfFile, NH: $nhFile, NHF: $nhfFile, AH: $ahFile, AHF: $ahfFile, SF: $snvFile\n";
 			open NF, ">$nfFile" or die "couldn't open $nfFile: $!\n";
 			open NH, ">$nhFile" or die "could't open $nhFile: $!\n";
 			open NHF, ">$nhfFile" or die "couldn't open $nhfFile: $!\n";
@@ -309,12 +304,7 @@ foreach my $subdir (@sortDirs) {
 }
 $pm->wait_all_children;
 
-
-my $currentDir = getcwd();
-print "currentDir: $currentDir\n";
 chdir $inDir;
-my $dir = getcwd();
-print "dir: $dir\n";
 
 my $ntFreqFile = $pref_name."_nt_freq.txt";
 my $ntHaploFile = $pref_name."_nt_haplotypes.fas";
@@ -346,12 +336,10 @@ print LOG "# match: $match; mismatch: $mismatch; gap penalty: $gapPenalty\n";
 print LOG "###########################################################################\n\n";
 
 foreach my $subdir (@sortDirs) {
-	print "log dir: $subdir\n";
 	$subdir = $inDir.'/'.$subdir;
 	print LOG "=== $subdir ===\n";		
 	my $iccOutDir = $subdir.'/F_R_combo/'.$outDir;															
 	if (-d $iccOutDir) {
-		print "== log $iccOutDir ==\n";
 		my $localLogFile = $iccOutDir.'/runICC.log';
 		open LLOG, $localLogFile or die "couldn't open $localLogFile: $!\n";
 		while (my $line = <LLOG>) {
@@ -406,32 +394,20 @@ close AH;
 close AHF;
 close SNV;
 
-foreach my $dir (@sortDirs) {
-	print "after log dir: $dir\n";
-}
-
 if ($assembleReads) {
 	my (@readnames, %readnameStatus, %readSeq, %corrreadSeq); 
 	foreach my $subdir (@sortDirs) {
-		print "inDir: $inDir\n";
-		print "subdir: $subdir\n";
-		#$subdir = $inDir.'/'.$subdir;
-		print "subdir1: $subdir\n";
-		#my $subdir2 = $inDir.'/'.$subdir1;
-		#print "subdir2: $subdir2\n";
 		if ($subdir =~ /Region(\d+)\-(\d+)/i) {			
 			opendir SUB, $subdir or die "couldn't open $subdir, line 417\n";
 			while (my $ssubdir = readdir SUB) {
 				unless ($ssubdir =~ /^\./) {
 					$ssubdir = $subdir.'/'.$ssubdir;
-					print "ssubdir: $ssubdir\n";
 					if (-d $ssubdir && $ssubdir =~ /F_R_combo/) {						
 						opendir SSUB, $ssubdir or die "couldn't open $ssubdir: $!\n";
 						while (my $file = readdir SSUB) {
 							if ($file =~ /_combo\.fas$/) {
 								my $name = '';
 								$file = "$ssubdir/$file";
-								print "file: $file\n";
 								open COMBO, $file or die "couldn't open $file: $!\n";
 								while (my $line = <COMBO>) {
 									chomp $line;
@@ -461,7 +437,6 @@ if ($assembleReads) {
 		my @regionreadnames = ();				
 		my $iccOutDir = $subdir.'/F_R_combo/'.$outDir;															
 		if (-d $iccOutDir) {
-			print "==$iccOutDir==\n";
 			my $nameFile = my $hicnameFile = my $icnameFile = my $ccnameFile = my $ccreadFile = '';
 			my %uniqReadnames = my %nameUniqname = my %uniqnameSeq = ();
 			opendir ICC, $iccOutDir or die "couldn't open $iccOutDir: $!\n";
