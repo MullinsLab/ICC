@@ -1,5 +1,5 @@
 ICC - Indel and carryforward correction
-Contact: dengw@uw.edu
+Contact: mullspt+cfar@uw.edu
 
 ========
 Overview
@@ -23,10 +23,11 @@ Installation
 2. Unzip ICC_vx.x.zip.
 3. Run "perl config.pl" in directory ICC_vx.x/Scripts.
 
-Note: x.x is the version number. NCBI's BLAST+ packages (version 2.2.27+) for Linux, Mac and Windows have been 
-pre-installed in ICC package. config.pl will automatically detect your operating system 
-and configure the paths to run BLAST and perl scripts. If you move installed ICC_vx.x 
-to other place, you need to run config.pl again before you execute ICC package.
+Note: x.x is the version number. NCBI's BLAST+ packages (version 2.2.27+) for Linux, 
+Mac and Windows have been pre-installed in ICC package. config.pl will automatically 
+detect your operating system and configure the paths to run BLAST and perl scripts. 
+If you move installed ICC_vx.x to other place, you need to run config.pl again before 
+you execute ICC package.
 
 =======================
 How to run ICC package?
@@ -142,6 +143,8 @@ Options:
                       [default: -9]
 -gp <int>             Gap penalty in multiple and pairwise alignment algorithm 
                       [default: -15]
+-ar                   Assemble before and after corrected reads in each window into 
+                      full length reads
 -h                    Usage help
 
 Note: You have to run runICC.pl in your working directory in which all subdirectories 
@@ -153,6 +156,8 @@ shows single nucleotide frequency by Poisson distribution. _nt_hyplotypes.fas is
 nucleotide hyplotype fasta file. _nt_hyplo_freq.txt is the file giving the frequency 
 of each nucleotide hyplotype. _aa_hyplotypes.fas is amino acid hyplotype fasta file. 
 _aa_hyplo_freq.txt is the file listing the frequency of each amino acid hyplotype. 
+beforeCorr_assembled.fas and afterCorr_assembled.fas are assembled reads from windows 
+before and after ICC corrections if option "-ar" is set.
 
 =======
 Example
@@ -182,7 +187,8 @@ Usage: perl /whereICCInstalled/Scripts/retrieveWindows.pl -xml exampleReadsFilte
 
 5. Error correction, variant calling and profiling
 
-Usage: perl /whereICCInstalled/Scripts/runICC.pl  >exampleReadFilterRef.log
+Usage: perl /whereICCInstalled/Scripts/runICC.pl -ar >exampleReadFilterRef.log
 
 The following result files will be created: Example_aa_hyplo_freq.txt, Example_aa_hyplotypes.fas, 
-Example_nt_freq.txt, Example_nt_hyplo_freq.txt, Example_nt_hyplotypes.fas, Example_SNV_freq.txt.
+Example_nt_freq.txt, Example_nt_hyplo_freq.txt, Example_nt_hyplotypes.fas, Example_SNV_freq.txt,
+beforeCorr_assembled.fas, afterCorr_assembled.fas.
