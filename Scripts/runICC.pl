@@ -15,6 +15,7 @@
 
 use strict;
 use lib "/home/wdeng/ICC/Scripts/lib";
+use Parallel::ForkManager;
 use paths;
 use utils;
 use File::Basename;
@@ -23,11 +24,13 @@ use File::Path;
 use Getopt::Long;
 use Cwd;
 use POSIX qw(strftime);
+use Config;
 
 my %option = (
 	'od' => 'ICC_output',
 	'cf' => 0.05,
 	'cs' => 2,
+	'proc' => 1,
 	'mt' => 10,
 	'mm' => -9,
 	'gp' => -15,
@@ -43,20 +46,22 @@ options:
 -cs     minimal cluster size as a cluster seed (defualt: $option{'cs'})
 -cf     carry-forward cutoff (0 - 1, default: $option{'cf'}, carry forward whose frequency is fewer than cutoff will be corrected)
 -u      overall mismatch rate per site (default: $option{'u'})
+-proc	use the specified number of processors (default: 1)
 -mt     match score (default: $option{mt})
 -mm     mismatch score (default: $option{mm})
 -gp     gap penalty (default: $option{gp})
--ar	assemble corrected reads in each window into full length reads
+-ar     assemble corrected reads in each window into full length reads
 -h      usage help
 
 ";
 
-GetOptions (\%option, 'od=s', 'cf=f', 'u=f', 'mt=f', 'mm=f', 'gp=f', 'cs=i', 'ar', 'h');
+GetOptions (\%option, 'od=s', 'cf=f', 'u=f', 'proc=i', 'mt=f', 'mm=f', 'gp=f', 'cs=i', 'ar', 'h');
 
 my $outDir = $option{'od'} or die $usage;
 my $cfCut = $option{'cf'};
 my $minClusterSize = $option{'cs'};
 my $u = $option{'u'};
+my $proc = $option{'proc'};
 my $match = $option{'mt'};
 my $mismatch  = $option{'mm'};
 my $gapPenalty = $option{'gp'};
@@ -66,11 +71,14 @@ die $usage if $help;
 my $inDir = getcwd();
 my $scriptPath = $paths::scriptPath;
 
+if ($proc < 1) {
+	die "Number of processors must be greater or equal 1.\n";
+}
 my @workingDirs = ();
 opendir DH, $inDir or die "couldn't open 1 $inDir\n";
 while (my $subdir = readdir DH) {
 	unless ($subdir =~ /^\./) {
-		if ($subdir =~ /Region(\d+)\-(\d+)/i) {
+		if ($subdir =~ /Region(\d+)\-(\d+)/) {
 			push @workingDirs, $subdir;
 		}
 	}
@@ -87,48 +95,20 @@ if ($inDir =~ /(.*)\/(.*?)$/) {
 	$pref_name = $inDir;
 }
 
-my $ntFreqFile = $pref_name."_nt_freq.txt";
-my $ntHaploFile = $pref_name."_nt_haplotypes.fas";
-my $ntHaploFreqFile = $pref_name."_nt_haplo_freq.txt";
-my $aaHaploFile = $pref_name."_aa_haplotypes.fas";
-my $aaHaploFreqFile = $pref_name."_aa_haplo_freq.txt";
-my $snvFreqFile = $pref_name."_SNV_freq.txt";
-
-print "\n#########################################################################\n";
-print "# Input directory: $inDir\n";
-print "# Output directory: $outDir\n";
-print "# carryforward correction cut-off: $cfCut\n";
-print "# minimal cluster size as a cluster seed: $minClusterSize\n";
-print "# overall mismatch rate per site: $u\n";
-print "# match: $match; mismatch: $mismatch; gap penalty: $gapPenalty\n";
-print "#########################################################################\n";
-
 my $startTime = time();
-
-open NF, ">$ntFreqFile" or die "couldn't open $ntFreqFile: $!\n";
-open NH, ">$ntHaploFile" or die "could't open $ntHaploFile: $!\n";
-open NHF, ">$ntHaploFreqFile" or die "couldn't open $ntHaploFreqFile: $!\n";
-open AH, ">$aaHaploFile" or die "couldn't open $aaHaploFile: $!\n";
-open AHF, ">$aaHaploFreqFile" or die "couldn't open $aaHaploFreqFile: $!\n";
-open SNV, ">$snvFreqFile" or die "couldn't open $snvFreqFile: $!\n";
-print NHF "Haplotype\tStart\tEnd\tFrequency\tReads\n";
-print AHF "Haplotype\tStart\tEnd\tFrequency\tReads\n";
-print NF "Position\tConsensus\t-\tA\tC\tG\tT\tCoverage\n";
-print SNV "Position\tConsensus\t-\tA\tC\tG\tT\tCoverage\n";
-
 my @sortDirs = sort by_number @workingDirs;
+
+my $pm = Parallel::ForkManager->new($proc);
 foreach my $subdir (@sortDirs) {
-	#print "subdir0: $subdir\n";
-	$subdir = $inDir.'/'.$subdir;
-	
+	my $pid = $pm->start and next;
+	$subdir = $inDir.'/'.$subdir;	
 	if (-d $subdir) {
 		if ($subdir =~ /Region(\d+)\-(\d+)/i) {
-			#my $timeStart = time();
 			my $rgStart = $1;
 			my $rgEnd = $2;
 			my $indelCfCorrOutUniq = '';
 			my $refSeq = '';
-			my $refFile = '';
+			my $refFile = my $logFile = my $nfFile = my $nhFile = my $nhfFile = my $ahFile = my $ahfFile = my $snvFile = '';
 			my $fwdFlag = my $revFlag = 0;
 			my $portionStart = my $portionEnd = 0;
 			
@@ -137,7 +117,7 @@ foreach my $subdir (@sortDirs) {
 				unless ($ssubdir =~ /^\./) {
 					$ssubdir = $subdir.'/'.$ssubdir;
 					if (-d $ssubdir && $ssubdir =~ /F_R_combo/) {						
-						print "\n====== Entering $ssubdir ======\n";
+						print "\n====== Processing $ssubdir ======\n";
 						opendir SSUB, $ssubdir or die "couldn't open $ssubdir: $!\n";
 						my $localOutDir = $ssubdir.'/'.$outDir;															
 						if (-e $localOutDir) {
@@ -151,6 +131,13 @@ foreach my $subdir (@sortDirs) {
 								my $uniqFile = $localOutDir.'/'.$file;
 								$uniqFile =~ s/\.fas$/_U.fas/;								
 								$refFile = $localOutDir.'/reference.fas';
+								$logFile = $localOutDir.'/runICC.log';
+								$nfFile = $localOutDir.'/NF.txt';
+								$nhFile = $localOutDir.'/NH.txt';
+								$nhfFile = $localOutDir.'/NHF.txt';
+								$ahFile = $localOutDir.'/AH.txt';
+								$ahfFile = $localOutDir.'/AHF.txt';
+								$snvFile = $localOutDir.'/SNV.txt';
 								my $refFlag = 0;
 								open IN, $inFile or die "couldn't open $inFile: $!\n";
 								open REF, ">$refFile" or die "couldn't open $refFile: $!\n";
@@ -168,33 +155,30 @@ foreach my $subdir (@sortDirs) {
 								close IN;
 								close REF;
 								# compress to unique reads
-								system ("perl $scriptPath/uniqueReads.pl -if $inFile -of $uniqFile");
+								system ("perl $scriptPath/uniqueReads.pl -if $inFile -of $uniqFile >$logFile");
 
-								print "Correcting homopolymer indels ...\n";
 								my $hmindelCorrOut = my $distOut = $uniqFile;
 								$hmindelCorrOut =~ s/\.fas/_HIC.fas/;
 								$distOut =~ s/\.fas/_dist.txt/;
-								system ("perl $scriptPath/HIC.pl -if $uniqFile -of $hmindelCorrOut -od $distOut -cs $minClusterSize -mt $match -mm $mismatch -gp $gapPenalty");
+								system ("perl $scriptPath/HIC.pl -if $uniqFile -of $hmindelCorrOut -od $distOut -cs $minClusterSize -mt $match -mm $mismatch -gp $gapPenalty >>$logFile");
 							
 								my $hmindelCorrOutUniq = $hmindelCorrOut;
 								$hmindelCorrOutUniq =~ s/\.fas/_U.fas/;
-								system ("perl $scriptPath/uniqueReads.pl -if $hmindelCorrOut -of $hmindelCorrOutUniq -uf");
+								system ("perl $scriptPath/uniqueReads.pl -if $hmindelCorrOut -of $hmindelCorrOutUniq -uf >>$logFile");
 
-								print "Correcting indels ...\n";
 								my $indelCorrOut = $hmindelCorrOutUniq;
 								$indelCorrOut =~ s/_HIC_U\.fas/_IC.fas/;
-								system ("perl $scriptPath/IC.pl -if $hmindelCorrOutUniq -id $distOut -of $indelCorrOut -cs $minClusterSize -mt $match -mm $mismatch -gp $gapPenalty");
+								system ("perl $scriptPath/IC.pl -if $hmindelCorrOutUniq -id $distOut -of $indelCorrOut -cs $minClusterSize -mt $match -mm $mismatch -gp $gapPenalty >>$logFile");
 								my $indelCorrOutUniq = $indelCorrOut;
 								$indelCorrOutUniq =~ s/\.fas/_U.fas/;
-								system ("perl $scriptPath/uniqueReads.pl -if $indelCorrOut -of $indelCorrOutUniq -uf");
+								system ("perl $scriptPath/uniqueReads.pl -if $indelCorrOut -of $indelCorrOutUniq -uf >>$logFile");
 
-								print "Correcting carryforward errors ...\n";
 								my $indelCfCorrOut = $indelCorrOutUniq;
 								$indelCfCorrOut =~ s/_IC_U\.fas/_CC.fas/;
-								system ("perl $scriptPath/CC.pl -if $indelCorrOutUniq -of $indelCfCorrOut -cf $cfCut -mt 10 -mm -10 -gp -10");
+								system ("perl $scriptPath/CC.pl -if $indelCorrOutUniq -of $indelCfCorrOut -cf $cfCut -mt 10 -mm -10 -gp -10 >>$logFile");
 								$indelCfCorrOutUniq = $indelCfCorrOut;
 								$indelCfCorrOutUniq =~ s/\.fas/_U.fas/;
-								system ("perl $scriptPath/uniqueReads.pl -if $indelCfCorrOut -of $indelCfCorrOutUniq -uf");									
+								system ("perl $scriptPath/uniqueReads.pl -if $indelCfCorrOut -of $indelCfCorrOutUniq -uf >>$logFile");									
 								unlink $distOut;			
 							}
 						}						
@@ -216,13 +200,12 @@ foreach my $subdir (@sortDirs) {
 			close OUT;
 										
 			# calculate Nt frequency
-			print "Calculating nucleotide frequencies ...\n";
 			my $afaFile = $indelCfCorrOutUniq_ref;
 			$afaFile =~ s/\.fas/\.afa/;
 			system ("perl $scriptPath/alignRegion.pl -if $indelCfCorrOutUniq_ref -oa $afaFile -mt $match -mm $mismatch -gp $gapPenalty -uf");		
 			my $afaFreqFile = $afaFile;
 			$afaFreqFile =~ s/\.afa/_freq\.txt/;
-			system ("perl $scriptPath/ntFreq.pl -ia $afaFile -of $afaFreqFile -uf");
+			system ("perl $scriptPath/ntFreq.pl -ia $afaFile -of $afaFreqFile -uf >>$logFile");
 			
 			# write frequencies in nucleotide and SNV frequency files with correct position
 			open AFA, $afaFile or die "couldn't open $afaFile: $!\n";
@@ -230,6 +213,12 @@ foreach my $subdir (@sortDirs) {
 			my $alignedRefSeq = <AFA>;
 			my @alignedRefNas = split //, $alignedRefSeq;
 			close AFA;
+			open NF, ">$nfFile" or die "couldn't open $nfFile: $!\n";
+			open NH, ">$nhFile" or die "could't open $nhFile: $!\n";
+			open NHF, ">$nhfFile" or die "couldn't open $nhfFile: $!\n";
+			open AH, ">$ahFile" or die "couldn't open $ahFile: $!\n";
+			open AHF, ">$ahfFile" or die "couldn't open $ahfFile: $!\n";
+			open SNV, ">$snvFile" or die "couldn't open $snvFile: $!\n";			
 			open FREQ, $afaFreqFile or die "couldn't open $afaFreqFile: $!\n";
 			my $pos = $rgStart;
 			my $afaFreqFlag = my $original_T_count = 0;
@@ -303,7 +292,99 @@ foreach my $subdir (@sortDirs) {
 				print AH "$aaSeq\n";
 			}
 			print AHF "\n";
+			close NF;
+			close NH;
+			close NHF;
+			close AH;
+			close AHF;
+			close SNV;
 		}			
+	}
+	$pm->finish; # Terminates the child process
+}
+$pm->wait_all_children;
+
+chdir $inDir;
+
+my $ntFreqFile = $pref_name."_nt_freq.txt";
+my $ntHaploFile = $pref_name."_nt_haplotypes.fas";
+my $ntHaploFreqFile = $pref_name."_nt_haplo_freq.txt";
+my $aaHaploFile = $pref_name."_aa_haplotypes.fas";
+my $aaHaploFreqFile = $pref_name."_aa_haplo_freq.txt";
+my $snvFreqFile = $pref_name."_SNV_freq.txt";
+my $logFile = $pref_name."_ICC.log";
+
+open NF, ">$ntFreqFile" or die "couldn't open $ntFreqFile: $!\n";
+open NH, ">$ntHaploFile" or die "could't open $ntHaploFile: $!\n";
+open NHF, ">$ntHaploFreqFile" or die "couldn't open $ntHaploFreqFile: $!\n";
+open AH, ">$aaHaploFile" or die "couldn't open $aaHaploFile: $!\n";
+open AHF, ">$aaHaploFreqFile" or die "couldn't open $aaHaploFreqFile: $!\n";
+open SNV, ">$snvFreqFile" or die "couldn't open $snvFreqFile: $!\n";
+open LOG, ">$logFile" or die "couldn't open $logFile: $!\n";
+print NHF "Haplotype\tStart\tEnd\tFrequency\tReads\n";
+print AHF "Haplotype\tStart\tEnd\tFrequency\tReads\n";
+print NF "Position\tConsensus\t-\tA\tC\tG\tT\tCoverage\n";
+print SNV "Position\tConsensus\t-\tA\tC\tG\tT\tCoverage\n";
+print LOG "\n###########################################################################\n";
+print LOG "# Input directory: $inDir\n";
+print LOG "# Output directory: $outDir\n";
+print LOG "# carryforward correction cut-off: $cfCut\n";
+print LOG "# minimal cluster size as a cluster seed: $minClusterSize\n";
+print LOG "# overall mismatch rate per site: $u\n";
+print LOG "# number of processors: $proc\n";
+print LOG "# match: $match; mismatch: $mismatch; gap penalty: $gapPenalty\n";
+print LOG "###########################################################################\n\n";
+
+foreach my $subdir (@sortDirs) {
+	$subdir = $inDir.'/'.$subdir;
+	print LOG "=== $subdir ===\n";		
+	my $iccOutDir = $subdir.'/F_R_combo/'.$outDir;															
+	if (-d $iccOutDir) {
+		my $localLogFile = $iccOutDir.'/runICC.log';
+		open LLOG, $localLogFile or die "couldn't open $localLogFile: $!\n";
+		while (my $line = <LLOG>) {
+			print LOG $line;
+		}
+		print LOG "\n";
+		close LLOG;
+		my $localNFFile = $iccOutDir.'/NF.txt';
+		open LNF, $localNFFile or die "couldn't open $localNFFile: $!\n";
+		while (my $line = <LNF>) {
+			print NF $line;
+		}
+		close LNF;
+		my $localNHFFile = $iccOutDir.'/NHF.txt';
+		open LNHF, $localNHFFile or die "couldn't open $localNHFFile: $!\n";
+		while (my $line = <LNHF>) {
+			print NHF $line;
+		}
+		close LNHF;
+		my $localNHFile = $iccOutDir.'/NH.txt';
+		open LNH, $localNHFile or die "couldn't open $localNHFile: $!\n";
+		while (my $line = <LNH>) {
+			print NH $line;
+		}
+		close LNH;
+		my $localAHFile = $iccOutDir.'/AH.txt';
+		open LAH, $localAHFile or die "couldn't open $localAHFile: $!\n";
+		while (my $line = <LAH>) {
+			print AH $line;
+		}
+		close LAH;
+		my $localAHFFile = $iccOutDir.'/AHF.txt';
+		open LAHF, $localAHFFile or die "couldn't open $localAHFFile: $!\n";
+		while (my $line = <LAHF>) {
+			print AHF $line;
+		}
+		close LAHF;
+		my $localSNVFile = $iccOutDir.'/SNV.txt';
+		open LSNV, $localSNVFile or die "couldn't open $localSNVFile: $!\n";
+		while (my $line = <LSNV>) {
+			print SNV $line;
+		}
+		close LSNV;
+	}else {
+		print LOG "Couldn't find directory $iccOutDir.\n";
 	}
 }
 close NF;
@@ -313,27 +394,20 @@ close AH;
 close AHF;
 close SNV;
 
-chdir $inDir;
-
 if ($assembleReads) {
 	my (@readnames, %readnameStatus, %readSeq, %corrreadSeq); 
 	foreach my $subdir (@sortDirs) {
-		#print "subdir1: $subdir\n";
-		#my $subdir2 = $inDir.'/'.$subdir1;
-		#print "subdir2: $subdir2\n";
 		if ($subdir =~ /Region(\d+)\-(\d+)/i) {			
-			opendir SUB, $subdir or die "couldn't open $subdir\n";
+			opendir SUB, $subdir or die "couldn't open $subdir, line 417\n";
 			while (my $ssubdir = readdir SUB) {
 				unless ($ssubdir =~ /^\./) {
 					$ssubdir = $subdir.'/'.$ssubdir;
-				#	print "ssubdir: $ssubdir\n";
 					if (-d $ssubdir && $ssubdir =~ /F_R_combo/) {						
 						opendir SSUB, $ssubdir or die "couldn't open $ssubdir: $!\n";
 						while (my $file = readdir SSUB) {
 							if ($file =~ /_combo\.fas$/) {
 								my $name = '';
 								$file = "$ssubdir/$file";
-				#				print "file: $file\n";
 								open COMBO, $file or die "couldn't open $file: $!\n";
 								while (my $line = <COMBO>) {
 									chomp $line;
@@ -363,7 +437,6 @@ if ($assembleReads) {
 		my @regionreadnames = ();				
 		my $iccOutDir = $subdir.'/F_R_combo/'.$outDir;															
 		if (-d $iccOutDir) {
-			#print "==$iccOutDir==\n";
 			my $nameFile = my $hicnameFile = my $icnameFile = my $ccnameFile = my $ccreadFile = '';
 			my %uniqReadnames = my %nameUniqname = my %uniqnameSeq = ();
 			opendir ICC, $iccOutDir or die "couldn't open $iccOutDir: $!\n";
@@ -488,8 +561,7 @@ if ($assembleReads) {
 			foreach my $readname (@regionreadnames) {
 				my $uniqname = $nameUniqname{$readname};
 				my $seq = $uniqnameSeq{$uniqname};
-				$corrreadSeq{$readname} .= $seq;
-				
+				$corrreadSeq{$readname} .= $seq;				
 			}
 		}
 	}
@@ -511,9 +583,8 @@ if ($assembleReads) {
 my $endTime = time();
 my $duration = $endTime - $startTime;
 my $hrs = int ($duration / 3600 * 100000 + 0.5) / 100000;
-print "\nAll done!\ntotal time duration: $hrs hour(s).\n\n";
-#print "\nAll done!\ntotal time duration: ". strftime("\%H:\%M:\%S", gmtime($duration)). "\n\n";
-
+print LOG "\nAll done!\ntotal time duration: $hrs hour(s).\n\n";
+close LOG;
 
 sub by_number {
 	$a =~ /Region(\d+)/;

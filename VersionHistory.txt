@@ -13,3 +13,7 @@ ICC Version History:
   - Adds an option in runICC.pl to assemble reads from continuous windows
     before and after ICC (please note that, if there is overlap or gap between
     windows, the assembling will not perform correctly)
+    
+* ICC_v2.0 June 20, 2014
+  - ICC can be run in parallel, which allows users to define number of processors to run 
+    ICC based on their computing resource and dramatically reduces the running time.

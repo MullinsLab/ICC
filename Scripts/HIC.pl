@@ -79,6 +79,7 @@ mkdir $outputDir;
 open OUTPUT,">$outFile" or die "couldn't open $outFile: $!\n";
 open DIST, ">$outDist" or die "couldn't open $outDist: $!\n";
 my %pwCalculated = my %dist = my %consDuplicates = ();
+print "Correcting homopolymer indels ...\n";
 while (@names) {
 	my $central_name = shift @names;
 	next if ($central_name =~ /^Reference_1$/i);

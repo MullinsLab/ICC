@@ -37,6 +37,7 @@ my $duplicates = 1;
 my $refName = my $refSeq = '';
 my ($seqName, $seq, $len, $nameSeq, $naStart, $naEnd, @seqNames, @fwdseqNames, @revseqNames, %seqDuplicate);
 die "The input file is empty.\n" if -z $inFile;
+print "Calculating nucleotide frequencies ...\n";
 open IN, $inFile or die "couldn't open $inFile: $!\n";
 while (my $line = <IN>) {
 	chomp $line;

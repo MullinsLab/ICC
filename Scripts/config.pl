@@ -41,7 +41,7 @@ print PM "our \$blastPath = \"$blastPath\";\n\n";
 print PM "1;\n";
 close PM;
 
-my @pls = qw (runBLAST.pl runICC.pl alignRegion.pl HIC.pl IC.pl CC.pl);
+my @pls = qw (runBLAST.pl runICC.pl alignRegion.pl HIC.pl IC.pl CC.pl retrieveWindows.pl retrieveRegion.pl readQualFilter.pl);
 foreach my $pl (@pls) {
 	my $tmp = $pl;
 	$tmp =~ s/\.pl$/_tmp.pl/;
