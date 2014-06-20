@@ -23,7 +23,6 @@ use Parallel::ForkManager;
 
 my %option = (
 	'ref'    => '',
-	'xmldir' => 'xmlOutput',
 	'afc'    => 0.6,
 	'rs'     => 0,
 	're'     => 0,
@@ -36,7 +35,6 @@ my $usage = "\nusage: perl retrieveRegion.pl [-option value]
 
 options:  
 -ref    input reference sequence used for blast in fasta format
--xmldir directory where BLASTN output XML files are (default: $option{'xmldir'})
 -rs     region start position in reference sequence
 -re     region end position in reference sequence
 -afc    cutoff of read aligned fraction over the read length (default: $option{afc}, only above the cutoff the read is considered to be correctly aligned to reference)
@@ -46,9 +44,8 @@ options:
 		
 ";
 
-GetOptions (\%option, 'ref=s', 'xmldir=s', 'rs=i', 're=i', 'afc=f', 'proc=i', 'dlx', 'h');
+GetOptions (\%option, 'ref=s', 'rs=i', 're=i', 'afc=f', 'proc=i', 'dlx', 'h');
 my $refFile = $option{'ref'} or die $usage;
-my $xmlDir = $option{'xmldir'};
 my $startPos = $option{'rs'} or die $usage;
 my $endPos = $option{'re'} or die $usage;
 my $alignCut = $option{'afc'};
@@ -65,7 +62,7 @@ if ($inDir =~ /(.*)\/(.*?)$/) {
 }else {
 	$pref_name = $inDir;
 }
-print "xmlDir: $xmlDir\n";
+my $xmlDir = 'xmlOutput';
 
 my $refSeq = '';
 my %readRgSeq = my %readRgSeqStatus = ();

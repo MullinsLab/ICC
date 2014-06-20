@@ -23,7 +23,6 @@ use Parallel::ForkManager;
 
 my %option = (
 	'ref'     => '',
-	'xmldir'  => 'xmlOutput',
 	'rs'      => 1,
 	're'      => 0,
 	'afc'     => 0.6,
@@ -38,7 +37,6 @@ my $usage = "\nusage: perl retrieveWindows.pl [-option value]
 
 options:  
 -ref    input reference sequence used for blast in fasta format
--xmldir directory where BLASTN output XML files are (default: $option{'xmldir'})
 -rs     start position in reference sequence that the region start for retrieving windows (default: start at reference)
 -re     end position in referece sequence that the region end for retrieving windows (default: end at reference)
 -afc    cutoff of read aligned fraction over the read length (default: $option{afc}, only above the cutoff the read is considered to be correctly aligned to reference)
@@ -50,9 +48,8 @@ options:
 		
 ";
 
-GetOptions (\%option, 'ref=s', 'xmldir=s', 'rs=i', 're=i', 'afc=f', 'ws=i', 'ss=i', 'proc=i', 'dlx', 'h');
+GetOptions (\%option, 'ref=s', 'rs=i', 're=i', 'afc=f', 'ws=i', 'ss=i', 'proc=i', 'dlx', 'h');
 my $refFile = $option{'ref'} or die $usage;
-my $xmlDir = $option{'xmldir'};
 my $wrStart = $option{'rs'};
 my $wrEnd = $option{'re'};
 my $alignCut = $option{'afc'};
@@ -71,6 +68,7 @@ if ($inDir =~ /(.*)\/(.*?)$/) {
 }else {
 	$pref_name = $inDir;
 }
+my $xmlDir = 'xmlOutput';
 
 my $refSeq = '';
 my %readRgSeq = my %readRgSeqStatus = my %rgDirectionFlag = ();

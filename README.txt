@@ -1,13 +1,13 @@
 ICC - Indel and carryforward correction
-Contact: dengw@uw.edu
+Contact: mullspt+cfar@uw.edu
 
 ========
 Overview
 ========
 
 ICC is a software pipeline to correct sequencing errors such as indel and CAFIE errors
-in Roche 454 pyrosequencing data, call single nucleotide variant and calculate 
-haplotype frequencies.
+in next generation sequencing data (Roche 454 pyrosequencing and Ion Torrent), 
+call single nucleotide variant and calculate haplotype frequencies.
 
 ===================
 System Requirements
@@ -50,6 +50,7 @@ Other options:
                       shorter than cutoff. [default: 100]
 -q <int>              Read quality cutoff value. Read will be discard if it's average
                       quality is smaller than cutoff. [default: 25]
+-proc <int>           Number of computer processors to use [default: 1]
 -h                    Usage help
 
 2. Map filtered reads to reference by BLAST
@@ -59,13 +60,13 @@ Usage: perl /whereICCInstalled/Scripts/runBLAST.pl [-option value]
 Required parameters:
 -in <file>            Input quality filtered reads fasta file
 -ref <file>           Input reference sequence fasta file
--out <file>           Output BLAST xml file
 
 Other options:
 -mt <int>             Match reward for BLAST algorithm. [default: 1]
 -mm <int>             Mis-match penalty for BLAST algorithm. [default: -1]
 -go <int>             Cost to open a gap for BLAST algorithm. [default: 1]  
 -ge <int>             Cost to extend a gap for BLAST algorithm. [default: 2] 
+-proc <int>           Number of computer processors to use [default: 1]
 -h                    Usage help         
 
 3. Retrieve sequences in windows or individual regions
@@ -75,7 +76,6 @@ Other options:
 Usage: perl /whereICCInstalled/Scripts/retrieveWindows.pl [-option value]
 
 Required parameters:
--xml <file>           Input BLAST xml file from step 2
 -ref <file>           Input reference sequence fasta file
 
 Other options:
@@ -89,6 +89,7 @@ Other options:
                       specifically align to reference if the fraction of alingment is 
                       greater than cutoff.  [default: 0.6]  
 -dlx                  Flag to delete xml file after running the script. [default: false] 
+-proc <int>           Number of computer processors to use [default: 1]
 -h                    Usage help
 
 Note: a serial sub-directories will be created in working directory with the name of
@@ -101,7 +102,6 @@ sequences covering the window.
 Usage: perl /whereICCInstalled/Scripts/retrieveRegion.pl [-option value]
 
 Required parameters:
--xml <file>           Input BLAST xml file from step 2
 -ref <file>           Input reference sequence fasta file
 -rs <int>             Start position in reference sequence to retrieve region. 
 -re <int>             End position in reference sequence to retrieve region. 
@@ -111,6 +111,7 @@ Other options:
                       specifically align to reference if the fraction of alignment is 
                       greater than cutoff.  [default: 0.6]  
 -dlx                  Flag to delete xml file after running the script. [default: false]
+-proc <int>           Number of computer processors to use [default: 1]
 -h                    Usage help
 
 Note: a sub-directory will be created in working directory with the name of
@@ -120,10 +121,10 @@ retrieved read sequences covering the region.
 
 4. Error correction, variant calling and profiling
 
-Usage: perl /whereICCInstalled/Scripts/runICC.pl [-option value] >logFile
+Usage: perl /whereICCInstalled/Scripts/runICC.pl [-option value] 
 
 Options:
--od <file>            Output directory where ICC processing data and results will be 
+-od <directory>       Output directory where ICC processing data and results will be 
                       stored. It will be created in the directory of 
                       yourWorkingDerectory/Region_<num1>-<num2>/F_R_combo/.
                       [default: ICC_output]
@@ -142,17 +143,22 @@ Options:
                       [default: -9]
 -gp <int>             Gap penalty in multiple and pairwise alignment algorithm 
                       [default: -15]
+-ar                   Assemble before and after corrected reads in each window into 
+                      full length reads
+-proc <int>           Number of computer processors to use [default: 1]
 -h                    Usage help
 
 Note: You have to run runICC.pl in your working directory in which all subdirectories 
 of "Region_<num1>-<num2>" are. It will output multiple files after the program finishes. 
-logFile records the process of running the program. Other file names all begin with 
-<NameOfYourWorkingDirectory>. _nt_freq.txt shows nucleotide frequencies at each position
+The file names all begin with <NameOfYourWorkingDirectory>. _ICC.log records the process 
+of running the program. _nt_freq.txt shows nucleotide frequencies at each position
 across reference before variant calling using Poisson distribution model. _SNV_freq.txt
 shows single nucleotide frequency by Poisson distribution. _nt_hyplotypes.fas is 
 nucleotide hyplotype fasta file. _nt_hyplo_freq.txt is the file giving the frequency 
 of each nucleotide hyplotype. _aa_hyplotypes.fas is amino acid hyplotype fasta file. 
 _aa_hyplo_freq.txt is the file listing the frequency of each amino acid hyplotype. 
+beforeCorr_assembled.fas and afterCorr_assembled.fas are assembled reads from windows 
+before and after ICC corrections if option "-ar" is set.
 
 =======
 Example
@@ -182,7 +188,8 @@ Usage: perl /whereICCInstalled/Scripts/retrieveWindows.pl -xml exampleReadsFilte
 
 5. Error correction, variant calling and profiling
 
-Usage: perl /whereICCInstalled/Scripts/runICC.pl  >exampleReadFilterRef.log
+Usage: perl /whereICCInstalled/Scripts/runICC.pl -proc 10 -ar
 
 The following result files will be created: Example_aa_hyplo_freq.txt, Example_aa_hyplotypes.fas, 
-Example_nt_freq.txt, Example_nt_hyplo_freq.txt, Example_nt_hyplotypes.fas, Example_SNV_freq.txt.
+Example_nt_freq.txt, Example_nt_hyplo_freq.txt, Example_nt_hyplotypes.fas, Example_SNV_freq.txt, 
+beforeCorr_assembled.fas, afterCorr_assembled.fas.
