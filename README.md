@@ -33,14 +33,10 @@ Starting with raw pyrosequencing reads fasta and quality files, ICC needs to run
 Usage: perl /whereICCInstalled/Scripts/readQualFilter.pl [-option value]
 
 Required parameters:
-
--is <file>            Input pyrosequencing reads fasta file
-
--iq <file>            Input pyrosequencing reads quality file
-
--os <file>            Output fasta file for reads passing quality filter
-
--oq <file>            Output quality file for reads passing quality filter
+ -is <file>            Input pyrosequencing reads fasta file
+ -iq <file>            Input pyrosequencing reads quality file
+ -os <file>            Output fasta file for reads passing quality filter
+ -oq <file>            Output quality file for reads passing quality filter
 
 Other options:
 -l <int>              Read length cutoff value. Read will be discard if it's length is
