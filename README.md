@@ -28,7 +28,7 @@ How to run ICC package?
 
 Starting with raw pyrosequencing reads fasta and quality files, ICC needs to run following four sequential steps:
 
-1. Read quality filtering
+1, Read quality filtering
 
 Usage: perl /whereICCInstalled/Scripts/readQualFilter.pl [-option value]
 
