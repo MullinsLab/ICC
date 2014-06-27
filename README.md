@@ -35,6 +35,10 @@ Usage: perl /whereICCInstalled/Scripts/readQualFilter.pl [-option value]
 Required parameters:
  -is <file>            Input pyrosequencing reads fasta file
  -iq <file>            Input pyrosequencing reads quality file
+
+Required parameters:
+ -is <file>            Input pyrosequencing reads fasta file
+ -iq <file>            Input pyrosequencing reads quality file
  -os <file>            Output fasta file for reads passing quality filter
  -oq <file>            Output quality file for reads passing quality filter
 
