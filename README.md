@@ -4,9 +4,7 @@ ICC -- Indel and carry-forward error corrections for next-generation sequencing 
 Overview
 ========
 
-ICC is a software pipeline to correct sequencing errors such as indel and CAFIE errors
-in next generation sequencing data (Roche 454 pyrosequencing and Ion Torrent), 
-call single nucleotide variant and calculate haplotype frequencies.
+ICC is a software pipeline to correct sequencing errors such as indel and CAFIE errors in next generation sequencing data (Roche 454 pyrosequencing and Ion Torrent), call single nucleotide variant and calculate haplotype frequencies.
 
 ===================
 System Requirements
@@ -22,27 +20,26 @@ Installation
 2. Unzip ICC_vx.x.zip.
 3. Run "perl config.pl" in directory ICC_vx.x/Scripts.
 
-Note: x.x is the version number. NCBI's BLAST+ packages (version 2.2.27+) for Linux, 
-Mac and Windows have been pre-installed in ICC package. config.pl will automatically 
-detect your operating system and configure the paths to run BLAST and perl scripts. 
-If you move installed ICC_vx.x to other place, you need to run config.pl again before 
-you execute ICC package.
+Note: x.x is the version number. NCBI's BLAST+ packages (version 2.2.27+) for Linux, Mac and Windows have been pre-installed in ICC package. config.pl will automatically detect your operating system and configure the paths to run BLAST and perl scripts. If you move installed ICC_vx.x to other place, you need to run config.pl again before you execute ICC package.
 
 =======================
 How to run ICC package?
 =======================
 
-Starting with raw pyrosequencing reads fasta and quality files, ICC needs to run 
-following four sequential steps:
+Starting with raw pyrosequencing reads fasta and quality files, ICC needs to run following four sequential steps:
 
 1. Read quality filtering
 
 Usage: perl /whereICCInstalled/Scripts/readQualFilter.pl [-option value]
 
 Required parameters:
+
 -is <file>            Input pyrosequencing reads fasta file
+
 -iq <file>            Input pyrosequencing reads quality file
+
 -os <file>            Output fasta file for reads passing quality filter
+
 -oq <file>            Output quality file for reads passing quality filter
 
 Other options:
@@ -79,10 +76,8 @@ Required parameters:
 -ref <file>           Input reference sequence fasta file
 
 Other options:
--rs <int>             Start position in reference sequence to retrieve windows. 
-                      [default: 1. i.e. beginning of the reference]
--re <int>             End position in reference sequence to retrieve windows. 
-                      [default: 0. i.e. end of the reference]
+-rs <int>             Start position in reference sequence to retrieve windows. [default: 1. i.e. beginning of the reference]
+-re <int>             End position in reference sequence to retrieve windows. [default: 0. i.e. end of the reference]
 -ws <int>             Window size. [default: 60]  
 -ss <int>             Window stride size. [default: 60]  
 -afc <int>            Alignment fraction Cutoff. Read will be considered to
