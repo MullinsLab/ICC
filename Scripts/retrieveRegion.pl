@@ -215,7 +215,7 @@ while (my $file = readdir XMLDIR) {
 $pm->wait_all_children;
 closedir XMLDIR;
 
-my $dir = "Region_P".$startPos.'-'.$endPos;
+my $dir = "Region".$startPos.'-'.$endPos;
 mkdir $dir unless (-e $dir);
 my $regionRefFile = $dir.'/refSeq.fas';
 open REF, ">$regionRefFile" or die "couldn't open $regionRefFile: $!\n";
