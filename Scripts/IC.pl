@@ -14,7 +14,7 @@
 #######################################################################################
 
 use strict;
-use lib "/home/wdeng/ICC/Scripts/lib";
+use lib "/opt/home/wdeng/ICC/Scripts/lib";
 use utils;
 use paths;
 use Getopt::Long;

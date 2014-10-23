@@ -14,7 +14,7 @@
 #######################################################################################
 
 use strict;
-use lib "/home/wdeng/ICC/Scripts/lib";
+use lib "/opt/home/wdeng/ICC/Scripts/lib";
 use Parallel::ForkManager;
 use paths;
 use utils;
@@ -108,7 +108,7 @@ foreach my $subdir (@sortDirs) {
 			my $rgEnd = $2;
 			my $indelCfCorrOutUniq = '';
 			my $refSeq = '';
-			my $refFile = my $logFile = my $nfFile = my $nhFile = my $nhfFile = my $ahFile = my $ahfFile = my $snvFile = '';
+			my $refFile = my $logFile = my $nfFile = my $nhFile = my $nhfFile = my $anhfFile = my $ahFile = my $ahfFile = my $snvFile = '';
 			my $fwdFlag = my $revFlag = 0;
 			my $portionStart = my $portionEnd = 0;
 			
@@ -135,6 +135,7 @@ foreach my $subdir (@sortDirs) {
 								$nfFile = $localOutDir.'/NF.txt';
 								$nhFile = $localOutDir.'/NH.txt';
 								$nhfFile = $localOutDir.'/NHF.txt';
+								$anhfFile = $localOutDir.'/ANHF.txt';
 								$ahFile = $localOutDir.'/AH.txt';
 								$ahfFile = $localOutDir.'/AHF.txt';
 								$snvFile = $localOutDir.'/SNV.txt';
@@ -175,10 +176,27 @@ foreach my $subdir (@sortDirs) {
 
 								my $indelCfCorrOut = $indelCorrOutUniq;
 								$indelCfCorrOut =~ s/_IC_U\.fas/_CC.fas/;
-								system ("perl $scriptPath/CC.pl -if $indelCorrOutUniq -of $indelCfCorrOut -cf $cfCut -mt 10 -mm -10 -gp -10 >>$logFile");
 								$indelCfCorrOutUniq = $indelCfCorrOut;
 								$indelCfCorrOutUniq =~ s/\.fas/_U.fas/;
-								system ("perl $scriptPath/uniqueReads.pl -if $indelCfCorrOut -of $indelCfCorrOutUniq -uf >>$logFile");									
+								if ($cfCut == 0) {
+									my $indelCfCorrOutUniqName = $indelCfCorrOutUniq.'.name';
+									my $indelCorrOutUniqName = $indelCorrOutUniq.'.name';
+									#copy($indelCorrOut, $indelCfCorrOut);
+									copy($indelCorrOutUniq, $indelCfCorrOutUniq);
+									open INNAME, $indelCorrOutUniqName or die "couldn't open $indelCorrOutUniqName: $!\n";
+									open OUTNAME, ">", $indelCfCorrOutUniqName or die "couldn't open > $indelCfCorrOutUniqName: $!\n";
+									while (my $line = <INNAME>) {
+										chomp $line;
+										next if $line =~ /^\s*$/;
+										my ($name) = split /\s/, $line;
+										print OUTNAME "$name $name\n";
+									}
+									close INNAME;
+									close OUTNAME;
+								}else {
+									system ("perl $scriptPath/CC.pl -if $indelCorrOutUniq -of $indelCfCorrOut -cf $cfCut -mt 10 -mm -10 -gp -10 >>$logFile");								
+									system ("perl $scriptPath/uniqueReads.pl -if $indelCfCorrOut -of $indelCfCorrOutUniq -uf >>$logFile");	
+								}															
 								unlink $distOut;			
 							}
 						}						
@@ -216,6 +234,7 @@ foreach my $subdir (@sortDirs) {
 			open NF, ">$nfFile" or die "couldn't open $nfFile: $!\n";
 			open NH, ">$nhFile" or die "could't open $nhFile: $!\n";
 			open NHF, ">$nhfFile" or die "couldn't open $nhfFile: $!\n";
+			open ANHF, ">$anhfFile" or die "couldn't open $anhfFile: $!\n";
 			open AH, ">$ahFile" or die "couldn't open $ahFile: $!\n";
 			open AHF, ">$ahfFile" or die "couldn't open $ahfFile: $!\n";
 			open SNV, ">$snvFile" or die "couldn't open $snvFile: $!\n";			
@@ -282,6 +301,30 @@ foreach my $subdir (@sortDirs) {
 			}
 			print NHF "\n";
 			
+			# write to aligned nucleotide haplotype frequency file
+			my $refFlag = 0;
+			open IN, $afaFile or die "couldn't open $afaFile: $!\n";
+			while (my $line = <IN>) {
+				chomp $line;
+				if ($line =~ /^>Reference/) {
+					$refFlag = 1;
+				}elsif ($refFlag) {
+					print ANHF "$line\t$rgStart\t$rgEnd\tRef\n";
+					$refFlag = 0;
+				}else {
+					unless ($line =~ /^>/) {
+						my $seq = $line;
+						$seq =~ s/\-//g;
+						if ($ntSeqCount{$seq}) {
+							my $freq = int ($ntSeqCount{$seq} / $poissonCutReads * 1000000 + 0.5) / 1000000;
+							print ANHF "$line\t$rgStart\t$rgEnd\t$freq\t$ntSeqCount{$seq}\n";
+						}
+					}
+				}
+			}
+			print ANHF "+\n";
+			close IN;
+			
 			# write to amino acid haplotype fasta and frequency file
 			my $aaHaploIdx = 0;
 			foreach my $aaSeq (sort{$aaSeqCount{$b} <=> $aaSeqCount{$a}} keys %aaSeqCount) {
@@ -295,6 +338,7 @@ foreach my $subdir (@sortDirs) {
 			close NF;
 			close NH;
 			close NHF;
+			close ANHF;
 			close AH;
 			close AHF;
 			close SNV;
@@ -309,6 +353,7 @@ chdir $inDir;
 my $ntFreqFile = $pref_name."_nt_freq.txt";
 my $ntHaploFile = $pref_name."_nt_haplotypes.fas";
 my $ntHaploFreqFile = $pref_name."_nt_haplo_freq.txt";
+my $alignedNtHaploFreqFile = $pref_name."_align_nt_haplo_freq.txt";
 my $aaHaploFile = $pref_name."_aa_haplotypes.fas";
 my $aaHaploFreqFile = $pref_name."_aa_haplo_freq.txt";
 my $snvFreqFile = $pref_name."_SNV_freq.txt";
@@ -317,11 +362,13 @@ my $logFile = $pref_name."_ICC.log";
 open NF, ">$ntFreqFile" or die "couldn't open $ntFreqFile: $!\n";
 open NH, ">$ntHaploFile" or die "could't open $ntHaploFile: $!\n";
 open NHF, ">$ntHaploFreqFile" or die "couldn't open $ntHaploFreqFile: $!\n";
+open ANHF, ">$alignedNtHaploFreqFile" or die "couldn't open $alignedNtHaploFreqFile: $!\n";
 open AH, ">$aaHaploFile" or die "couldn't open $aaHaploFile: $!\n";
 open AHF, ">$aaHaploFreqFile" or die "couldn't open $aaHaploFreqFile: $!\n";
 open SNV, ">$snvFreqFile" or die "couldn't open $snvFreqFile: $!\n";
 open LOG, ">$logFile" or die "couldn't open $logFile: $!\n";
 print NHF "Haplotype\tStart\tEnd\tFrequency\tReads\n";
+print ANHF "Haplotype\tStart\tEnd\tFrequency\tReads\n";
 print AHF "Haplotype\tStart\tEnd\tFrequency\tReads\n";
 print NF "Position\tConsensus\t-\tA\tC\tG\tT\tCoverage\n";
 print SNV "Position\tConsensus\t-\tA\tC\tG\tT\tCoverage\n";
@@ -359,6 +406,12 @@ foreach my $subdir (@sortDirs) {
 			print NHF $line;
 		}
 		close LNHF;
+		my $localANHFFile = $iccOutDir.'/ANHF.txt';
+		open LANHF, $localANHFFile or die "couldn't open $localANHFFile: $!\n";
+		while (my $line = <LANHF>) {
+			print ANHF $line;
+		}
+		close LANHF;
 		my $localNHFile = $iccOutDir.'/NH.txt';
 		open LNH, $localNHFile or die "couldn't open $localNHFile: $!\n";
 		while (my $line = <LNH>) {
@@ -390,6 +443,7 @@ foreach my $subdir (@sortDirs) {
 close NF;
 close NH;
 close NHF;
+close ANHF;
 close AH;
 close AHF;
 close SNV;

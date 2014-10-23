@@ -18,7 +18,7 @@ use Getopt::Long;
 use File::Basename;
 use File::Copy;
 use File::Path;
-use lib "/home/wdeng/ICC/Scripts/lib";
+use lib "/opt/home/wdeng/ICC/Scripts/lib";
 use Parallel::ForkManager;
 use paths;
 
