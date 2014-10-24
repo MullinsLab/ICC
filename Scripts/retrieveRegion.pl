@@ -18,7 +18,7 @@ use File::Basename;
 use File::Path;
 use Getopt::Long;
 use Cwd;
-use lib "/opt/home/wdeng/ICC/Scripts/lib";
+use lib "/home/wdeng/ICC/Scripts/lib";
 use Parallel::ForkManager;
 
 my %option = (

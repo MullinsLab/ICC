@@ -14,7 +14,7 @@
 #######################################################################################
 
 use strict;
-use lib "/opt/home/wdeng/ICC/Scripts/lib";
+use lib "/home/wdeng/ICC/Scripts/lib";
 use seqAlign;
 use utils;
 use paths;

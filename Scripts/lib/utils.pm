@@ -76,7 +76,7 @@ sub calculate_poisson {
 }
 
 sub translation {
-	my $ntSeq = shift;
+	my $codon = shift;
 	my %codons = (
 		"ATT" => "I",
 		"ATC" => "I",
@@ -142,15 +142,9 @@ sub translation {
 		"TAA" => '$',
 		"TAG" => '$',
 		"TGA" => '$',
-	);
-	my $idx = 0;
-	my $aaSeq = '';
-	while (length substr($ntSeq, $idx, 3) == 3) {
-		my $codon = substr($ntSeq, $idx, 3);
-		$aaSeq .= $codons{$codon};
-		$idx += 3;
-	}
-	return $aaSeq;
+	);	
+	my $aa = $codons{$codon};
+	return $aa;
 }
 
 

@@ -14,7 +14,7 @@
 #######################################################################################
 
 use strict;
-use lib "/opt/home/wdeng/ICC/Scripts/lib";
+use lib "/home/wdeng/ICC/Scripts/lib";
 use Parallel::ForkManager;
 use paths;
 use utils;
@@ -289,6 +289,19 @@ foreach my $subdir (@sortDirs) {
 					print NH "$line\n";
 					$ntSeqCount{$line} = $nt_dup;
 					my $aaSeq = utils::translation($line);
+					my $idx = 0;
+					my $aaSeq = '';
+					while (length substr($line, $idx, 3) == 3) {
+						my $codon = substr($line, $idx, 3);
+						my $aa = '';
+						if ($codon =~ /^[ACGT]{3}$/) {
+							$aa = utils::translation($codon);
+						}else {
+							$aa = "X";							
+						}
+						$aaSeq .= $aa;
+						$idx += 3;
+					}
 					$aaSeqCount{$aaSeq} += $nt_dup;
 				}
 			}
