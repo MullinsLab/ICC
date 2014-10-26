@@ -288,7 +288,6 @@ foreach my $subdir (@sortDirs) {
 				}elsif ($poissonFlag) {
 					print NH "$line\n";
 					$ntSeqCount{$line} = $nt_dup;
-					my $aaSeq = utils::translation($line);
 					my $idx = 0;
 					my $aaSeq = '';
 					while (length substr($line, $idx, 3) == 3) {
