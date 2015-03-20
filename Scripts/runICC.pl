@@ -27,16 +27,17 @@ use POSIX qw(strftime);
 use Config;
 
 my %option = (
-	'od' => 'ICC_output',
-	'cf' => 0.05,
-	'cs' => 2,
-	'proc' => 1,
-	'mt' => 10,
-	'mm' => -9,
-	'gp' => -15,
-	'u'  => 0.00013,
-	'ar' => '',
-	'h'  => '',
+	'od'     => 'ICC_output',
+	'cf'     => 0.05,
+	'cs'     => 2,
+	'proc'   => 1,
+	'mt'     => 10,
+	'mm'     => -9,
+	'gp'     => -15,
+	'u'      => 0.00013,
+	'ar'     => '',
+	'detail' => '',
+	'h'      => '',
 );
 
 my $usage = "\nUsage: perl runICC.pl [-option value]
@@ -51,11 +52,12 @@ options:
 -mm     mismatch score (default: $option{mm})
 -gp     gap penalty (default: $option{gp})
 -ar     assemble corrected reads in each window into full length reads
+-detail keep intermediate directories and files for user to check
 -h      usage help
 
 ";
 
-GetOptions (\%option, 'od=s', 'cf=f', 'u=f', 'proc=i', 'mt=f', 'mm=f', 'gp=f', 'cs=i', 'ar', 'h');
+GetOptions (\%option, 'od=s', 'cf=f', 'u=f', 'proc=i', 'mt=f', 'mm=f', 'gp=f', 'cs=i', 'ar', 'detail', 'h');
 
 my $outDir = $option{'od'} or die $usage;
 my $cfCut = $option{'cf'};
@@ -66,6 +68,7 @@ my $match = $option{'mt'};
 my $mismatch  = $option{'mm'};
 my $gapPenalty = $option{'gp'};
 my $assembleReads = $option{'ar'};
+my $detail = $option{'detail'};
 my $help = $option{'h'};
 die $usage if $help;
 my $inDir = getcwd();
@@ -464,7 +467,7 @@ if ($assembleReads) {
 	my (@readnames, %readnameStatus, %readSeq, %corrreadSeq); 
 	foreach my $subdir (@sortDirs) {
 		if ($subdir =~ /Region(\d+)\-(\d+)/i) {			
-			opendir SUB, $subdir or die "couldn't open $subdir, line 417\n";
+			opendir SUB, $subdir or die "couldn't open $subdir: $!\n";
 			while (my $ssubdir = readdir SUB) {
 				unless ($ssubdir =~ /^\./) {
 					$ssubdir = $subdir.'/'.$ssubdir;
@@ -644,6 +647,16 @@ if ($assembleReads) {
 	}
 	close BC;
 	close AC;
+}
+
+if (!$detail) {	# remove all intermediate directories
+	foreach my $subdir (@sortDirs) {
+		if ($subdir =~ /Region(\d+)\-(\d+)/i) {
+			rmtree($subdir);
+		}
+	}
+	my $xmlDir = $inDir.'/xmlOutput';
+	rmtree($xmlDir) if (-e $xmlDir);
 }
 
 my $endTime = time();
